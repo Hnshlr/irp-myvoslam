@@ -6,8 +6,6 @@ Autonomous Vehicle Self Awareness through use of SLAM algorithms.
 
 https://www.github.com/Hnshlr
 
----
-
 ## Computer Vision: Visual Odometry with Monocular Camera
 
 1. The necessary imports are made, including modules for visualization, file handling, and OpenCV.
