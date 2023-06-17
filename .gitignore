@@ -162,5 +162,12 @@ cython_debug/
 # Data
 src/data
 
+# Models
+src/models
+
 # macOS
 .DS_Store
+
+# Jupyter Notebook
+*.ipynb
+main.ipynb
