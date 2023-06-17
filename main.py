@@ -1,22 +1,45 @@
 # IMPORTS=
-import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import os
 import time
 
+# SEMANTIC SEGMENTATION=
+import pixellib
+from pixellib.torchbackend.instance import instanceSegmentation # first model
+from pixellib.semantic import semantic_segmentation # second model
+
 # MODELS=
 from src.VisualOdometry import VisualOdometry
+from src.Utils import load_images
 
 def main():
     # SETTINGS=
     input_dir = "src/data/input/kitti/"
-    dataset_indexes = [["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"][7]]
+    dataset_indexes = [["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"][0]]
     datasets = [os.path.join(input_dir, dataset_index) for dataset_index in dataset_indexes]
 
     # MAIN=
     csv_string = "dataset, x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff\n"
     for dataset in datasets:
+        # SEMANTIC SEGMENTATION:
+        # seg = semantic_segmentation()
+        # seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
+        # images_path = os.path.join(dataset, "image_0")
+        # for png in os.listdir(images_path):
+        #     image_path = os.path.join(images_path, png)
+        #     timer = time.time()
+        #     seg.segmentAsAde20k(image_path, output_image_name="output.png", overlay=True)
+        #     print("Time:", np.round(time.time() - timer, 2), " seconds")
+        #     break
+
+        # VIDEO SEMANTIC SEGMENTATION:
+        seg = semantic_segmentation()
+        seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
+        timer = time.time()
+        seg.process_video_ade20k("src/data/output/kitti_S1.mp4", frames_per_second=15, output_video_name="src/data/output/kitti_S1_semantic.mp4")
+        print("Time:", np.round(time.time() - timer, 2), " seconds")
+
         # VISUAL ODOMETRY:
         vo = VisualOdometry(dataset)    # Initialize the Visual Odometry class
         gt_path, est_path = [], []
