@@ -18,9 +18,9 @@ class VisualOdometry():
         search_params = dict(checks=50)
         self.flann = cv2.FlannBasedMatcher(indexParams=index_params, searchParams=search_params)
 
-    def get_matches(self, i, show=True):
-        kp1, des1 = self.orb.detectAndCompute(self.images[i - 1], None) # Previous image
-        kp2, des2 = self.orb.detectAndCompute(self.images[i], None) # Current image
+    def get_matches(self, i, show=True, prev_mask=None, curr_mask=None):
+        kp1, des1 = self.orb.detectAndCompute(self.images[i - 1], mask=prev_mask)
+        kp2, des2 = self.orb.detectAndCompute(self.images[i], mask=curr_mask)
         # The two previous lines serve to find the keypoints and descriptors of the two images
         # Then we match the descriptors, and only keep the good matches.
         matches = self.flann.knnMatch(des1, des2, k=2)

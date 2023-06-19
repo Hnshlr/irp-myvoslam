@@ -6,8 +6,7 @@ import time
 
 # SEMANTIC SEGMENTATION=
 import pixellib
-from pixellib.torchbackend.instance import instanceSegmentation # first model
-from pixellib.semantic import semantic_segmentation # second model
+from pixellib.semantic import semantic_segmentation     # second model
 
 # MODELS=
 from src.VisualOdometry import VisualOdometry
@@ -22,23 +21,36 @@ def main():
     # MAIN=
     csv_string = "dataset, x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff\n"
     for dataset in datasets:
-        # SEMANTIC SEGMENTATION:
-        # seg = semantic_segmentation()
-        # seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
-        # images_path = os.path.join(dataset, "image_0")
-        # for png in os.listdir(images_path):
-        #     image_path = os.path.join(images_path, png)
-        #     timer = time.time()
-        #     seg.segmentAsAde20k(image_path, output_image_name="output.png", overlay=True)
-        #     print("Time:", np.round(time.time() - timer, 2), " seconds")
-        #     break
+        # PATHS=
+        images_path = os.path.join(dataset, "image_0")
+        images_paths = [os.path.join(images_path, file) for file in sorted(os.listdir(images_path))]
+        images_paths.sort()
 
-        # VIDEO SEMANTIC SEGMENTATION:
+        # SEMANTIC SEGMENTATION:
         seg = semantic_segmentation()
         seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
-        timer = time.time()
-        seg.process_video_ade20k("src/data/output/kitti_S1.mp4", frames_per_second=15, output_video_name="src/data/output/kitti_S1_semantic.mp4")
-        print("Time:", np.round(time.time() - timer, 2), " seconds")
+        def get_upscaled_mask(image_path, features):
+            segvalues, masks, output = seg.segmentAsAde20k(images_paths[0], overlay=True, extract_segmented_objects=True)
+            # From the masks list, get the element where class_name = "building" (segvalues is a dictionary with the class names):
+            masks = [mask for mask in masks if mask['class_name'] in features]
+            masks = [mask['masks'] for mask in masks]
+            dimx, dimy = masks[0].shape
+            mask = np.zeros((dimx, dimy), dtype=bool)
+            for i in range(dimx):
+                for j in range(dimy):
+                    mask[i, j] = False
+                    for m in masks:
+                        if m[i, j]:
+                            mask[i, j] = True
+                            break
+
+            # The mask (true/false) is 512x154, so we need to resize it to the image size (1226x370):
+            upscaled_mask = np.zeros((370, 1226), dtype=np.uint8)
+            ratio = 370/154
+            for i in range(upscaled_mask.shape[0]):
+                for j in range(upscaled_mask.shape[1]):
+                    upscaled_mask[i, j] = 255 if mask[int(i/ratio), int(j/ratio)] else 0
+            return upscaled_mask
 
         # VISUAL ODOMETRY:
         vo = VisualOdometry(dataset)    # Initialize the Visual Odometry class
@@ -47,7 +59,8 @@ def main():
             if i == 0:  # First pose is the origin
                 cur_pose = gt_pose
             else:
-                q1, q2 = vo.get_matches(i, show=False)  # Get the matches between the current and previous image
+                features = ["earth", "grass", "sidewalk", "road", "car", "building"]
+                q1, q2 = vo.get_matches(i, show=True, prev_mask=get_upscaled_mask(images_paths[i-1], features=features), curr_mask=get_upscaled_mask(images_paths[i], features=features))  # Get the matches between the current and previous image
                 transf = vo.get_pose(q1, q2)    # Get the transformation matrix between the current and previous image
                 cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))   # Update the current pose
             gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))  # Append the ground truth path
