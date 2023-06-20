@@ -16,13 +16,13 @@ def main():
     # SETTINGS=
     input_dir = "src/data/input/kitti/"
     dataset_indexes = [["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"][0]]
-    datasets = [os.path.join(input_dir, dataset_index) for dataset_index in dataset_indexes]
+    datasets_paths = [os.path.join(input_dir, dataset_index) for dataset_index in dataset_indexes]
 
     # MAIN=
     csv_string = "dataset, x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff\n"
-    for dataset in datasets:
+    for dataset_path in datasets_paths:
         # PATHS=
-        images_path = os.path.join(dataset, "image_0")
+        images_path = os.path.join(dataset_path, "image_0")
         images_paths = [os.path.join(images_path, file) for file in sorted(os.listdir(images_path))]
         images_paths.sort()
 
@@ -53,13 +53,13 @@ def main():
             return upscaled_mask
 
         # VISUAL ODOMETRY:
-        vo = VisualOdometry(dataset)    # Initialize the Visual Odometry class
+        vo = VisualOdometry(dataset_path)    # Initialize the Visual Odometry class
         gt_path, est_path = [], []
         for i, gt_pose in enumerate(tqdm(vo.gt_poses, unit="pose", desc="Processing dataset")):
             if i == 0:  # First pose is the origin
                 cur_pose = gt_pose
             else:
-                features = ["earth", "grass", "sidewalk", "road", "car", "building"]
+                features = ["earth", "grass", "sidewalk", "road", "car", "building"][5]
                 q1, q2 = vo.get_matches(i, show=True, prev_mask=get_upscaled_mask(images_paths[i-1], features=features), curr_mask=get_upscaled_mask(images_paths[i], features=features))  # Get the matches between the current and previous image
                 transf = vo.get_pose(q1, q2)    # Get the transformation matrix between the current and previous image
                 cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))   # Update the current pose
@@ -74,7 +74,7 @@ def main():
         x_max_diff = np.abs(np.round(np.max([gt_path[i][0] - est_path[i][0] for i in range(len(gt_path))]), 2))
         y_max_diff = np.abs(np.round(np.max([gt_path[i][1] - est_path[i][1] for i in range(len(gt_path))]), 2))
         print("x_final_diff:", x_final_diff, " | y_final_diff:", y_final_diff, " | x_mean_diff:", x_mean_diff, " | y_mean_diff:", y_mean_diff, " | x_max_diff:", x_max_diff, " | y_max_diff:", y_max_diff)
-        csv_string += f"{dataset}, {x_final_diff}, {y_final_diff}, {x_mean_diff}, {y_mean_diff}, {x_max_diff}, {y_max_diff}\n"
+        csv_string += f"{dataset_path}, {x_final_diff}, {y_final_diff}, {x_mean_diff}, {y_mean_diff}, {x_max_diff}, {y_max_diff}\n"
         time.sleep(1)
 
     # SAVE RESULTS=
