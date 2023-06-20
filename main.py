@@ -13,17 +13,17 @@ from src.VisualOdometry import VisualOdometry
 from src.Utils import load_images
 
 def main():
-    # SETTINGS=
-    input_dir = "src/data/input/kitti/"
-    dataset_indexes = [["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"][0]]
+    # PATHS=
     datasets_paths = [os.path.join(input_dir, dataset_index) for dataset_index in dataset_indexes]
 
-    # MAIN=
+    # MEASUREMENTS=
     csv_string = "dataset, x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff\n"
+
+    # MAIN=
     for dataset_path in datasets_paths:
         # PATHS=
-        images_path = os.path.join(dataset_path, "image_0")
-        images_paths = [os.path.join(images_path, file) for file in sorted(os.listdir(images_path))]
+        images_dir_path = os.path.join(dataset_path, "image_0")
+        images_paths = [os.path.join(images_dir_path, file) for file in sorted(os.listdir(images_dir_path))]
         images_paths.sort()
 
         # SEMANTIC SEGMENTATION:
@@ -59,14 +59,13 @@ def main():
             if i == 0:  # First pose is the origin
                 cur_pose = gt_pose
             else:
-                features = ["earth", "grass", "sidewalk", "road", "car", "building"][5]
-                q1, q2 = vo.get_matches(i, show=True, prev_mask=get_upscaled_mask(images_paths[i-1], features=features), curr_mask=get_upscaled_mask(images_paths[i], features=features))  # Get the matches between the current and previous image
+                q1, q2 = vo.get_matches(i, show=showMatches, prev_mask=get_total_upscaled_mask(images_paths[i - 1], features=features), curr_mask=get_total_upscaled_mask(images_paths[i], features=features))  # Get the matches between the current and previous image
                 transf = vo.get_pose(q1, q2)    # Get the transformation matrix between the current and previous image
                 cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))   # Update the current pose
             gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))  # Append the ground truth path
             est_path.append((cur_pose[0, 3], cur_pose[2, 3]))   # Append the estimated path
 
-        # TESTS=
+        # MEASUREMENTS=
         x_final_diff = np.abs(np.round(gt_path[-1][0] - est_path[-1][0], 2))
         y_final_diff = np.abs(np.round(gt_path[-1][1] - est_path[-1][1], 2))
         x_mean_diff = np.abs(np.round(np.mean([gt_path[i][0] - est_path[i][0] for i in range(len(gt_path))]), 2))
