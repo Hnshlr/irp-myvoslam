@@ -30,7 +30,7 @@ def main():
         seg = semantic_segmentation()
         seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
         def get_upscaled_mask(image_path, features):
-            segvalues, masks, output = seg.segmentAsAde20k(images_paths[0], overlay=True, extract_segmented_objects=True)
+            segvalues, masks, output = seg.segmentAsAde20k(image_path, overlay=True, extract_segmented_objects=True)
             # From the masks list, get the element where class_name = "building" (segvalues is a dictionary with the class names):
             masks = [mask for mask in masks if mask['class_name'] in features]
             masks = [mask['masks'] for mask in masks]
