@@ -4,13 +4,16 @@ from tqdm import tqdm
 import os
 import time
 
-# SEMANTIC SEGMENTATION=
-import pixellib
-from pixellib.semantic import semantic_segmentation     # second model
-
 # MODELS=
 from src.VisualOdometry import VisualOdometry
 from src.Utils import load_images
+from src.SemanticSegmentation import get_total_upscaled_mask
+
+# SETTINGS=
+input_dir = "src/data/input/kitti/"
+dataset_indexes = [["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"][0]]
+features = ["earth", "grass", "sidewalk", "road", "car", "building"].clear()
+showMatches = True
 
 def main():
     # PATHS=
@@ -25,32 +28,6 @@ def main():
         images_dir_path = os.path.join(dataset_path, "image_0")
         images_paths = [os.path.join(images_dir_path, file) for file in sorted(os.listdir(images_dir_path))]
         images_paths.sort()
-
-        # SEMANTIC SEGMENTATION:
-        seg = semantic_segmentation()
-        seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
-        def get_upscaled_mask(image_path, features):
-            segvalues, masks, output = seg.segmentAsAde20k(image_path, overlay=True, extract_segmented_objects=True)
-            # From the masks list, get the element where class_name = "building" (segvalues is a dictionary with the class names):
-            masks = [mask for mask in masks if mask['class_name'] in features]
-            masks = [mask['masks'] for mask in masks]
-            dimx, dimy = masks[0].shape
-            mask = np.zeros((dimx, dimy), dtype=bool)
-            for i in range(dimx):
-                for j in range(dimy):
-                    mask[i, j] = False
-                    for m in masks:
-                        if m[i, j]:
-                            mask[i, j] = True
-                            break
-
-            # The mask (true/false) is 512x154, so we need to resize it to the image size (1226x370):
-            upscaled_mask = np.zeros((370, 1226), dtype=np.uint8)
-            ratio = 370/154
-            for i in range(upscaled_mask.shape[0]):
-                for j in range(upscaled_mask.shape[1]):
-                    upscaled_mask[i, j] = 255 if mask[int(i/ratio), int(j/ratio)] else 0
-            return upscaled_mask
 
         # VISUAL ODOMETRY:
         vo = VisualOdometry(dataset_path)    # Initialize the Visual Odometry class
