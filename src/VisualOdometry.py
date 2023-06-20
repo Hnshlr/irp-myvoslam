@@ -19,28 +19,62 @@ class VisualOdometry():
         self.flann = cv2.FlannBasedMatcher(indexParams=index_params, searchParams=search_params)
 
     def get_matches(self, i, show=True, prev_mask=None, curr_mask=None):
-        kp1, des1 = self.orb.detectAndCompute(self.images[i - 1], mask=prev_mask)
-        kp2, des2 = self.orb.detectAndCompute(self.images[i], mask=curr_mask)
+        # VERSION 1: ORB + FLANN
+        # kp1, des1 = self.orb.detectAndCompute(self.images[i - 1], mask=prev_mask)
+        # kp2, des2 = self.orb.detectAndCompute(self.images[i], mask=curr_mask)
         # The two previous lines serve to find the keypoints and descriptors of the two images
         # Then we match the descriptors, and only keep the good matches.
+        # matches = self.flann.knnMatch(des1, des2, k=2)
+
+        # VERSION 2: FAST FEATURES DETECTOR + FLANN
+        fast = cv2.FastFeatureDetector_create()
+        kp1 = fast.detect(self.images[i - 1], mask=prev_mask)
+        kp2 = fast.detect(self.images[i], mask=curr_mask)
+        kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
+        kp2, des2 = self.orb.compute(self.images[i], kp2)
         matches = self.flann.knnMatch(des1, des2, k=2)
 
+        # Lowe's ratio test:
         good = []   # Good matches
         try:
             for m, n in matches:
-                if m.distance < 0.8 * n.distance:   # If the distance between the two matches (of both the previous and current image) is small enough
+                if m.distance < 0.8 * n.distance:
                     good.append(m)  # Then we keep the match. Otherwise, we discard it because the distance is too large.
         except ValueError:
             pass
 
+        # Get the coordinates of the keypoints of the good matches:
+        q1 = np.float32([kp1[m.queryIdx].pt for m in good])
+        q2 = np.float32([kp2[m.trainIdx].pt for m in good])
+
+        # 1. Filter out the matches whose distance is 3 times larger than the median distance:
+        # median_y_distance = np.median(np.abs(q1[:, 1] - q2[:, 1]))
+        # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 6 * median_y_distance]).squeeze()
+        # q1 = q1[mask]
+        # q2 = q2[mask]
+        # good = [good[i] for i in range(len(mask)) if mask[i]]
+
+        # 2. Filter out the matches whose distance is larger than 1/10th of the image height:
+        image_height = self.images[i].shape[0]
+        mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 10]).squeeze()
+        q1 = q1[mask]
+        q2 = q2[mask]
+        good = [good[i] for i in range(len(mask)) if mask[i]]
+
+        # 3. Filter out the matches to keep only the matches that are in the 1/3th bottom of the image:
+        image_height = self.images[i].shape[0]
+        mask = np.array([q1[:, 1] > 2 * image_height / 3]).squeeze()
+        q1 = q1[mask]
+        q2 = q2[mask]
+        good = [good[i] for i in range(len(mask)) if mask[i]]
+
+        # Show the matches:
         if show:
             draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
             img3 = cv2.drawMatches(self.images[i], kp1, self.images[i-1], kp2, good, None, **draw_params)
             cv2.imshow("image", img3)
             cv2.waitKey(200)
 
-        q1 = np.float32([kp1[m.queryIdx].pt for m in good])
-        q2 = np.float32([kp2[m.trainIdx].pt for m in good])
         return q1, q2
 
     def get_pose(self, q1, q2):
