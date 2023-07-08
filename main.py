@@ -1,7 +1,4 @@
 # IMPORTS=
-import numpy as np
-from tqdm import tqdm
-import os
 import time
 
 # MODELS=
@@ -18,7 +15,7 @@ dataset_indexes = skitti_indexes
 methods = ["mono", "stereo"][0:1]
 features = ["earth", "grass", "sidewalk", "road", "building"].clear()
 showMatches = False
-saveData = False
+saveData = True
 
 # MAIN:
 def main():

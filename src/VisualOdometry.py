@@ -91,11 +91,9 @@ class VisualOdometry():
 
     def get_matches(self, i, show=True, prev_mask=None, curr_mask=None):
         # VERSION 1: ORB + FLANN
-        kp1, des1 = self.orb.detectAndCompute(self.images[i - 1], mask=prev_mask)
-        kp2, des2 = self.orb.detectAndCompute(self.images[i], mask=curr_mask)
-        # The two previous lines serve to find the keypoints and descriptors of the two images
-        # Then we match the descriptors, and only keep the good matches.
-        matches = self.flann.knnMatch(des1, des2, k=2)
+        # kp1, des1 = self.orb.detectAndCompute(self.images[i - 1], mask=prev_mask)
+        # kp2, des2 = self.orb.detectAndCompute(self.images[i], mask=curr_mask)
+        # matches = self.flann.knnMatch(des1, des2, k=2)
 
         # VERSION 2: FAST FEATURES DETECTOR + FLANN
         # fast = cv2.FastFeatureDetector_create()
@@ -105,12 +103,21 @@ class VisualOdometry():
         # kp2, des2 = self.orb.compute(self.images[i], kp2)
         # matches = self.flann.knnMatch(des1, des2, k=2)
 
+        # VERSION 3: SURF + FLANN
+        surf = cv2.xfeatures2d.SURF_create()
+        kp1 = surf.detect(self.images[i - 1], mask=prev_mask)
+        kp2 = surf.detect(self.images[i], mask=curr_mask)
+        kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
+        kp2, des2 = self.orb.compute(self.images[i], kp2)
+        matches = self.flann.knnMatch(des1, des2, k=2)
+
         # Lowe's ratio test:
         good = []   # Good matches
         try:
-            for m, n in matches:
+            for m, n in matches:    # m is the best match, n is the second best match
                 if m.distance < 0.8 * n.distance:
                     good.append(m)  # Then we keep the match. Otherwise, we discard it because the distance is too large.
+                    # 0.8 is
         except ValueError:
             pass
 
