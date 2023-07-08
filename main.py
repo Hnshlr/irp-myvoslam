@@ -8,9 +8,12 @@ import time
 from src.Measurement import *
 from src.VisualOdometry import *
 
-# SETTINGS=
+# DATA=
 input_dir = "src/data/input/kitti/"
-dataset_indexes = ["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+skitti_indexes = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"]
+kitti_indexes = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+dataset_indexes = skitti_indexes[0:4]
+# SETTINGS=
 methods = ["mono", "stereo"]
 features = ["earth", "grass", "sidewalk", "road", "car", "building"].clear()
 showMatches = False
