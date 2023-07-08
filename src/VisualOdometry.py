@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 from scipy.optimize import least_squares
+import random
 
 from src.Utils import *
 from src.SemanticSegmentation import *
@@ -79,7 +80,7 @@ class VisualOdometry():
                 if i < 1:
                     cur_pose = gt_pose
                 else:
-                    transf = self.get_pose(i)
+                    transf = self.get_pose(i, show=show_matches)
                     cur_pose = np.matmul(cur_pose, transf)
                 gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))
                 est_path.append((cur_pose[0, 3], cur_pose[2, 3]))
@@ -96,20 +97,20 @@ class VisualOdometry():
         # matches = self.flann.knnMatch(des1, des2, k=2)
 
         # VERSION 2: FAST FEATURES DETECTOR + FLANN
-        # fast = cv2.FastFeatureDetector_create()
-        # kp1 = fast.detect(self.images[i - 1], mask=prev_mask)
-        # kp2 = fast.detect(self.images[i], mask=curr_mask)
-        # kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
-        # kp2, des2 = self.orb.compute(self.images[i], kp2)
-        # matches = self.flann.knnMatch(des1, des2, k=2)
-
-        # VERSION 3: SURF + FLANN
-        surf = cv2.xfeatures2d.SURF_create()
-        kp1 = surf.detect(self.images[i - 1], mask=prev_mask)
-        kp2 = surf.detect(self.images[i], mask=curr_mask)
+        fast = cv2.FastFeatureDetector_create()
+        kp1 = fast.detect(self.images[i - 1], mask=prev_mask)
+        kp2 = fast.detect(self.images[i], mask=curr_mask)
         kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
         kp2, des2 = self.orb.compute(self.images[i], kp2)
         matches = self.flann.knnMatch(des1, des2, k=2)
+
+        # VERSION 3: SURF + FLANN
+        # surf = cv2.xfeatures2d.SURF_create()
+        # kp1 = surf.detect(self.images[i - 1], mask=prev_mask)
+        # kp2 = surf.detect(self.images[i], mask=curr_mask)
+        # kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
+        # kp2, des2 = self.orb.compute(self.images[i], kp2)
+        # matches = self.flann.knnMatch(des1, des2, k=2)
 
         # Lowe's ratio test:
         good = []   # Good matches
@@ -146,11 +147,17 @@ class VisualOdometry():
         # q2 = q2[mask]
         # good = [good[i] for i in range(len(mask)) if mask[i]]
 
-        # Show the matches:
+        # Show the matches and keypoints (good only):
         if show:
+            # Show the keypoints of the good matches:
+            img1 = cv2.drawKeypoints(self.images[i - 1], kp1, None, color=(255, 0, 0))
+            img2 = cv2.drawKeypoints(self.images[i], kp2, None, color=(255, 0, 0))
+            img23 = np.concatenate((img1, img2), axis=1)
+            cv2.imshow("image23", img23)
+
             draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
             img3 = cv2.drawMatches(self.images[i], kp1, self.images[i-1], kp2, good, None, **draw_params)
-            cv2.imshow("image", img3)
+            cv2.imshow("image3", img3)
             cv2.waitKey(200)
 
         return q1, q2
@@ -304,6 +311,25 @@ class VisualOdometry():
         # Flatten the keypoint list
         kp_list_flatten = np.concatenate(kp_list)
         return kp_list_flatten
+
+    def get_nottiled_keypoints(self, img):
+        """
+        Detects keypoints in the image
+
+        Parameters
+        ----------
+        img (ndarray): The image to find keypoints in. Shape (height, width)
+
+        Returns
+        -------
+        kp_list (ndarray): A 1-D list of all keypoints. Shape (n_keypoints)
+        """
+        # Detect keypoints
+        keypoints = self.fastFeatures.detect(img)
+        keypoints = sorted(keypoints, key=lambda x: -x.response)[:2000]
+        for pt in keypoints:
+            pt.pt = (pt.pt[0], pt.pt[1])
+        return keypoints
 
     def track_keypoints(self, img1, img2, kp1, max_error=4):
         """
@@ -474,7 +500,7 @@ class VisualOdometry():
         transformation_matrix = form_transf(R, t)
         return transformation_matrix
 
-    def get_pose(self, i):
+    def get_pose(self, i, show=True):
         """
         "(SCRATCH) - HOW TO STEPS:
         Calculates the transformation matrix for the i'th frame
@@ -495,6 +521,7 @@ class VisualOdometry():
 
         # Get the tiled keypoints (top 10 best keypoints per tile)
         kp1_l = self.get_tiled_keypoints(img1_l, 10, 20)
+        # kp1_l = self.get_nottiled_keypoints(img1_l)
 
         # Track the keypoints
         tp1_l, tp2_l = self.track_keypoints(img1_l, img2_l, kp1_l)
@@ -510,5 +537,18 @@ class VisualOdometry():
 
         # Estimate the transformation matrix
         transformation_matrix = self.estimate_pose(tp1_l, tp2_l, Q1, Q2)
+
+        if show:
+            # Show the matches and the disparity map:
+            draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
+            tp1_l = [cv2.KeyPoint(x, y, 1) for x, y in tp1_l]
+            tp2_l = [cv2.KeyPoint(x, y, 1) for x, y in tp2_l]
+            matches = [cv2.DMatch(i, i, 0) for i in range(len(tp1_l))]
+            img = cv2.drawMatches(img1_l, tp1_l, img2_l, tp2_l, matches, None, **draw_params)
+            disparity = self.disparities[i - 1]
+            disparity = cv2.normalize(disparity, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            cv2.imshow('disparity', disparity)
+            cv2.imshow('matches', img)
+            cv2.waitKey(200)
 
         return transformation_matrix
