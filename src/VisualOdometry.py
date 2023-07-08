@@ -98,12 +98,12 @@ class VisualOdometry():
         matches = self.flann.knnMatch(des1, des2, k=2)
 
         # VERSION 2: FAST FEATURES DETECTOR + FLANN
-        fast = cv2.FastFeatureDetector_create()
-        kp1 = fast.detect(self.images[i - 1], mask=prev_mask)
-        kp2 = fast.detect(self.images[i], mask=curr_mask)
-        kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
-        kp2, des2 = self.orb.compute(self.images[i], kp2)
-        matches = self.flann.knnMatch(des1, des2, k=2)
+        # fast = cv2.FastFeatureDetector_create()
+        # kp1 = fast.detect(self.images[i - 1], mask=prev_mask)
+        # kp2 = fast.detect(self.images[i], mask=curr_mask)
+        # kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
+        # kp2, des2 = self.orb.compute(self.images[i], kp2)
+        # matches = self.flann.knnMatch(des1, des2, k=2)
 
         # Lowe's ratio test:
         good = []   # Good matches

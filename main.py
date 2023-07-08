@@ -12,11 +12,13 @@ from src.VisualOdometry import *
 input_dir = "src/data/input/kitti/"
 skitti_indexes = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"]
 kitti_indexes = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
-dataset_indexes = skitti_indexes[0:4]
+dataset_indexes = skitti_indexes
+
 # SETTINGS=
-methods = ["mono", "stereo"]
-features = ["earth", "grass", "sidewalk", "road", "car", "building"].clear()
+methods = ["mono", "stereo"][0:1]
+features = ["earth", "grass", "sidewalk", "road", "building"].clear()
 showMatches = False
+saveData = False
 
 # MAIN:
 def main():
@@ -33,8 +35,9 @@ def main():
             # SAVE DATA:
             xy_values_csv += dataset_path.split("/")[-1] + ", " + method + ", " + str(x_final_diff) + ", " + str(y_final_diff) + ", " + str(x_mean_diff) + ", " + str(y_mean_diff) + ", " + str(x_max_diff) + ", " + str(y_max_diff) + "\n"
     # SAVE CSV:
-    with open("src/data/output/" + time.strftime("%Y-%m-%d_%H-%M") + ".csv", "w") as f:
-        f.write(xy_values_csv)
+    if saveData:
+        with open("src/data/output/" + time.strftime("%Y-%m-%d_%H-%M") + ".csv", "w") as f:
+            f.write(xy_values_csv)
 
 
 if __name__ == "__main__":
