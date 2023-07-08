@@ -5,57 +5,33 @@ import os
 import time
 
 # MODELS=
-from src.VisualOdometry import VisualOdometry
-from src.Utils import load_images
-from src.SemanticSegmentation import get_total_upscaled_mask
+from src.Measurement import *
+from src.VisualOdometry import *
 
 # SETTINGS=
 input_dir = "src/data/input/kitti/"
-dataset_indexes = [["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"][0]]
+dataset_indexes = ["S1", "S2", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
+methods = ["mono", "stereo"]
 features = ["earth", "grass", "sidewalk", "road", "car", "building"].clear()
-showMatches = True
+showMatches = False
 
+# MAIN:
 def main():
-    # PATHS=
-    datasets_paths = [os.path.join(input_dir, dataset_index) for dataset_index in dataset_indexes]
-
-    # MEASUREMENTS=
-    csv_string = "dataset, x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff\n"
-
-    # MAIN=
-    for dataset_path in datasets_paths:
-        # PATHS=
-        images_dir_path = os.path.join(dataset_path, "image_0")
-        images_paths = [os.path.join(images_dir_path, file) for file in sorted(os.listdir(images_dir_path))]
-        images_paths.sort()
-
-        # VISUAL ODOMETRY:
-        vo = VisualOdometry(dataset_path)    # Initialize the Visual Odometry class
-        gt_path, est_path = [], []
-        for i, gt_pose in enumerate(tqdm(vo.gt_poses, unit="pose", desc="Processing dataset")):
-            if i == 0:  # First pose is the origin
-                cur_pose = gt_pose
-            else:
-                q1, q2 = vo.get_matches(i, show=showMatches, prev_mask=get_total_upscaled_mask(images_paths[i - 1], features=features), curr_mask=get_total_upscaled_mask(images_paths[i], features=features))  # Get the matches between the current and previous image
-                transf = vo.get_pose(q1, q2)    # Get the transformation matrix between the current and previous image
-                cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))   # Update the current pose
-            gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))  # Append the ground truth path
-            est_path.append((cur_pose[0, 3], cur_pose[2, 3]))   # Append the estimated path
-
-        # MEASUREMENTS=
-        x_final_diff = np.abs(np.round(gt_path[-1][0] - est_path[-1][0], 2))
-        y_final_diff = np.abs(np.round(gt_path[-1][1] - est_path[-1][1], 2))
-        x_mean_diff = np.abs(np.round(np.mean([gt_path[i][0] - est_path[i][0] for i in range(len(gt_path))]), 2))
-        y_mean_diff = np.abs(np.round(np.mean([gt_path[i][1] - est_path[i][1] for i in range(len(gt_path))]), 2))
-        x_max_diff = np.abs(np.round(np.max([gt_path[i][0] - est_path[i][0] for i in range(len(gt_path))]), 2))
-        y_max_diff = np.abs(np.round(np.max([gt_path[i][1] - est_path[i][1] for i in range(len(gt_path))]), 2))
-        print("x_final_diff:", x_final_diff, " | y_final_diff:", y_final_diff, " | x_mean_diff:", x_mean_diff, " | y_mean_diff:", y_mean_diff, " | x_max_diff:", x_max_diff, " | y_max_diff:", y_max_diff)
-        csv_string += f"{dataset_path}, {x_final_diff}, {y_final_diff}, {x_mean_diff}, {y_mean_diff}, {x_max_diff}, {y_max_diff}\n"
-        time.sleep(1)
-
-    # SAVE RESULTS=
-    with open("src/data/output/results.csv", "w") as f:
-        f.write(csv_string)
+    # SAVE DATA:
+    xy_values_csv = "dataset, method, x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff\n"
+    for method in methods:
+        # FOR EACH DATASET:
+        for dataset_path in [os.path.join(input_dir, dataset_index) for dataset_index in dataset_indexes]:
+            # VISUAL ODOMETRY:
+            vo = VisualOdometry(dataset_path, method=method)   # Initialize the Visual Odometry class
+            gt_path, est_path = vo.estimate_path(show_matches=showMatches, features=features)     # Estimate the path
+            # MEASUREMENTS:
+            x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff = get_xy_values(gt_path, est_path, print_values=True)  # Get the measurements
+            # SAVE DATA:
+            xy_values_csv += dataset_path.split("/")[-1] + ", " + method + ", " + str(x_final_diff) + ", " + str(y_final_diff) + ", " + str(x_mean_diff) + ", " + str(y_mean_diff) + ", " + str(x_max_diff) + ", " + str(y_max_diff) + "\n"
+    # SAVE CSV:
+    with open("src/data/output/" + time.strftime("%Y-%m-%d_%H-%M") + ".csv", "w") as f:
+        f.write(xy_values_csv)
 
 
 if __name__ == "__main__":
