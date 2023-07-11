@@ -27,6 +27,9 @@ class VisualOdometry():
             self.images_l = load_images(data_dir + '/image_0')
             self.images_r = load_images(data_dir + '/image_1')
 
+            # TODO: TEMP REMOVE:
+            self.confidences = []
+
             # Disparity map creation:
             block = 11
             P1 = block * block * 8
@@ -84,6 +87,9 @@ class VisualOdometry():
                     cur_pose = np.matmul(cur_pose, transf)
                 gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))
                 est_path.append((cur_pose[0, 3], cur_pose[2, 3]))
+            # TODO: REMOVE:
+            print("Dataset " + str(self.dataset_dir_path) + " average confidence: " + str(
+                np.mean(self.confidences)))
             return gt_path, est_path
         else:
             raise ValueError("Invalid method")
@@ -147,7 +153,13 @@ class VisualOdometry():
         # q2 = q2[mask]
         # good = [good[i] for i in range(len(mask)) if mask[i]]
 
-        # Show the matches and keypoints (good only):
+        # 4. Filter out the matches whose x distance is 3 times larger than the median x distance:
+        median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
+        mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
+        q1 = q1[mask]
+        q2 = q2[mask]
+        good = [good[i] for i in range(len(mask)) if mask[i]]
+
         if show:
             # Show the keypoints of the good matches:
             img1 = cv2.drawKeypoints(self.images[i - 1], kp1, None, color=(255, 0, 0))
@@ -155,9 +167,16 @@ class VisualOdometry():
             img23 = np.concatenate((img1, img2), axis=1)
             cv2.imshow("image23", img23)
 
+            # Show the good matches:
             draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
             img3 = cv2.drawMatches(self.images[i], kp1, self.images[i-1], kp2, good, None, **draw_params)
             cv2.imshow("image3", img3)
+
+            # Draw the optical flow:
+            img4 = self.images[i].copy()
+            for i in range(len(q1)):
+                cv2.arrowedLine(img4, tuple(q1[i]), tuple(q2[i]), (255, 0, 0), 1)
+            cv2.imshow("image4", img4)
             cv2.waitKey(200)
 
         return q1, q2
@@ -326,6 +345,11 @@ class VisualOdometry():
         """
         # Detect keypoints
         keypoints = self.fastFeatures.detect(img)
+
+        # Using ORB:
+        # orb = cv2.ORB_create()
+        # keypoints = orb.detect(img)
+
         keypoints = sorted(keypoints, key=lambda x: -x.response)[:2000]
         for pt in keypoints:
             pt.pt = (pt.pt[0], pt.pt[1])
@@ -520,8 +544,8 @@ class VisualOdometry():
         img1_l, img2_l = self.images_l[i - 1:i + 1]
 
         # Get the tiled keypoints (top 10 best keypoints per tile)
-        kp1_l = self.get_tiled_keypoints(img1_l, 10, 20)
-        # kp1_l = self.get_nottiled_keypoints(img1_l)
+        # kp1_l = self.get_tiled_keypoints(img1_l, 10, 20)
+        kp1_l = self.get_nottiled_keypoints(img1_l)
 
         # Track the keypoints
         tp1_l, tp2_l = self.track_keypoints(img1_l, img2_l, kp1_l)
@@ -538,6 +562,9 @@ class VisualOdometry():
         # Estimate the transformation matrix
         transformation_matrix = self.estimate_pose(tp1_l, tp2_l, Q1, Q2)
 
+        # TODO: REMOVE: Print the average confidence of the keypoints:
+        self.confidences.append(np.mean([kp.response for kp in kp1_l]))
+
         if show:
             # Show the matches and the disparity map:
             draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
@@ -549,6 +576,9 @@ class VisualOdometry():
             disparity = cv2.normalize(disparity, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
             cv2.imshow('disparity', disparity)
             cv2.imshow('matches', img)
+            # Show the 2D keypoints:
+            img1_l = cv2.drawKeypoints(img1_l, kp1_l, None, color=(255, 0, 0), flags=0)
+            cv2.imshow('keypoints', img1_l)
             cv2.waitKey(200)
 
         return transformation_matrix
