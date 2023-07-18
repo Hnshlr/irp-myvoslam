@@ -13,67 +13,49 @@ class VisualOdometry():
         self.method = method
         self.dataset_dir_path = data_dir
         if method == "mono":
-            self.K, self.P = load_calib_v2(os.path.join(data_dir, 'calib.txt'))
+            self.K, self.P = load_calib(os.path.join(data_dir, 'calib.txt'))
             self.gt_poses = load_poses(os.path.join(data_dir, 'poses.txt'))
             self.images = load_images(os.path.join(data_dir, "image_0"))
+
             self.orb = cv2.ORB_create(3000)
             FLANN_INDEX_LSH = 6
             index_params = dict(algorithm=FLANN_INDEX_LSH, table_number=6, key_size=12, multi_probe_level=1)
             search_params = dict(checks=50)
             self.flann = cv2.FlannBasedMatcher(indexParams=index_params, searchParams=search_params)
+
+            # PATHS= (FOR SEMANTIC SEGMENTATION)
+            images_dir_path = os.path.join(self.dataset_dir_path, "image_0")
+            self.images_paths = [os.path.join(images_dir_path, file) for file in sorted(os.listdir(images_dir_path))]
+            self.images_paths.sort()
         elif method == "stereo":
             self.K_l, self.P_l, self.K_r, self.P_r = load_calib_LR(data_dir + '/calib.txt')
             self.gt_poses = load_poses(data_dir + '/poses.txt')
             self.images_l = load_images(data_dir + '/image_0')
             self.images_r = load_images(data_dir + '/image_1')
 
-            # TODO: TEMP REMOVE:
-            self.confidences = []
-
-            # Disparity map creation:
             block = 11
             P1 = block * block * 8
             P2 = block * block * 32
             self.disparity = cv2.StereoSGBM_create(minDisparity=0, numDisparities=32, blockSize=block, P1=P1, P2=P2)
-            # disparity is a StereoSGBM object that can be used to compute the disparity map(s) between two images.
-            # P1 and P2 are parameters that control the smoothness of the disparity map.
-            # The block size is the size of the window used to match pixels between the two images.
-            # The number of disparities is the maximum disparity minus the minimum disparity. The maximum disparity represents the maximum shift between the two images.
-
-            # Create the disparities list and add the first disparity map (between the first left and right images):
-            self.disparities = [
-                np.divide(self.disparity.compute(self.images_l[0], self.images_r[0]).astype(np.float32), 16)]
-            # disparities is a list of disparity maps, one for each frame. Each disparity map is a numpy array of shape (height, width),
-            # same dimensions as the images. The values in the disparity map represent the disparity in pixels between the two images.
+            self.disparities = [np.divide(self.disparity.compute(self.images_l[0], self.images_r[0]).astype(np.float32), 16)]
 
             self.fastFeatures = cv2.FastFeatureDetector_create()
-
-            # Parameters for lucas kanade optical flow
-            self.lk_params = dict(winSize=(15, 15),
-                                  flags=cv2.MOTION_AFFINE,
-                                  maxLevel=3,
-                                  criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 50, 0.03))
+            self.lk_params = dict(winSize=(15, 15), flags=cv2.MOTION_AFFINE, maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 50, 0.03))
         else:
             raise ValueError("Method must be 'mono' or 'stereo'.")
 
     # PATH ESTIMATION (MONO/STEREO):
     def estimate_path(self, show_matches=False, features=[None].clear()):
-        # PATHS= (FOR SEMANTIC SEGMENTATION)
-        images_dir_path = os.path.join(self.dataset_dir_path, "image_0")
-        images_paths = [os.path.join(images_dir_path, file) for file in sorted(os.listdir(images_dir_path))]
-        images_paths.sort()
         gt_path, est_path = [], []
         if self.method == "mono":
             for i, gt_pose in enumerate(tqdm(self.gt_poses, unit="pose", desc="Processing dataset")):
                 if i == 0:  # First pose is the origin
                     cur_pose = gt_pose
                 else:
-                    q1, q2 = self.get_matches(i,
-                                              show=show_matches,
-                                              prev_mask=get_total_upscaled_mask(images_paths[i - 1], features=features),
-                                              curr_mask=get_total_upscaled_mask(images_paths[i], features=features)
-                                              )  # Get the matches between the current and previous image
-                    transf = self.get_pose_from_matches(q1, q2)  # Get the transformation matrix between the current and previous image
+                    transf = self.get_pose_mono(i,
+                                                show=show_matches, prev_mask=get_total_upscaled_mask(self.images_paths[i - 1], features=features),
+                                                curr_mask=get_total_upscaled_mask(self.images_paths[i], features=features)
+                                                ) # Get the transformation matrix between the current and previous image
                     cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))  # Update the current pose
                 gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))  # Append the ground truth path
                 est_path.append((cur_pose[0, 3], cur_pose[2, 3]))  # Append the estimated path
@@ -87,9 +69,6 @@ class VisualOdometry():
                     cur_pose = np.matmul(cur_pose, transf)
                 gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))
                 est_path.append((cur_pose[0, 3], cur_pose[2, 3]))
-            # TODO: REMOVE:
-            print("Dataset " + str(self.dataset_dir_path) + " average confidence: " + str(
-                np.mean(self.confidences)))
             return gt_path, est_path
         else:
             raise ValueError("Invalid method")
@@ -181,7 +160,14 @@ class VisualOdometry():
 
         return q1, q2
 
-    def get_pose_from_matches(self, q1, q2):
+    def get_pose_mono(self, i, show=False, prev_mask=None, curr_mask=None):
+
+        q1, q2 = self.get_matches(i,
+                                  show=show,
+                                  prev_mask=prev_mask,
+                                  curr_mask=curr_mask
+                                  )  # Get the matches between the current and previous image
+
         E, _ = cv2.findEssentialMat(q1, q2, self.K, threshold=1)
 
         R, t = self.decomp_essential_mat(E, q1, q2)
@@ -289,73 +275,29 @@ class VisualOdometry():
         return residuals
 
     def get_tiled_keypoints(self, img, tile_h, tile_w):
-        """
-        Splits the image into tiles and detects the 10 best keypoints in each tile
-
-        Parameters
-        ----------
-        img (ndarray): The image to find keypoints in. Shape (height, width)
-        tile_h (int): The tile height
-        tile_w (int): The tile width
-
-        Returns
-        -------
-        kp_list (ndarray): A 1-D list of all keypoints. Shape (n_keypoints)
-        """
-
         def get_kps(x, y):
-            # Get the image tile
             impatch = img[y:y + tile_h, x:x + tile_w]
-
-            # Detect keypoints
             keypoints = self.fastFeatures.detect(impatch)
-
-            # Correct the coordinate for the point
             for pt in keypoints:
                 pt.pt = (pt.pt[0] + x, pt.pt[1] + y)
-
-            # Get the 10 best keypoints
             if len(keypoints) > 10:
                 keypoints = sorted(keypoints, key=lambda
                     x: -x.response)  # The reponse parameter is the strength of the keypoint (strengh means how well the keypoint can be described)
                 return keypoints[:10]
             return keypoints
-
-        # Get the image height and width
         h, w, *_ = img.shape
-
-        # Get the keypoints for each of the tiles
         kp_list = [get_kps(x, y) for y in range(0, h, tile_h) for x in range(0, w, tile_w)]
-
-        # Flatten the keypoint list
         kp_list_flatten = np.concatenate(kp_list)
         return kp_list_flatten
 
     def get_nottiled_keypoints(self, img):
-        """
-        Detects keypoints in the image
-
-        Parameters
-        ----------
-        img (ndarray): The image to find keypoints in. Shape (height, width)
-
-        Returns
-        -------
-        kp_list (ndarray): A 1-D list of all keypoints. Shape (n_keypoints)
-        """
-        # Detect keypoints
         keypoints = self.fastFeatures.detect(img)
-
-        # Using ORB:
-        # orb = cv2.ORB_create()
-        # keypoints = orb.detect(img)
-
         keypoints = sorted(keypoints, key=lambda x: -x.response)[:2000]
         for pt in keypoints:
             pt.pt = (pt.pt[0], pt.pt[1])
         return keypoints
 
-    def track_keypoints(self, img1, img2, kp1, max_error=4):
+    def track_keypoints(self, img1,  img2, kp1, max_error=4):
         """
         Tracks the keypoints between frames
 
@@ -544,8 +486,8 @@ class VisualOdometry():
         img1_l, img2_l = self.images_l[i - 1:i + 1]
 
         # Get the tiled keypoints (top 10 best keypoints per tile)
-        # kp1_l = self.get_tiled_keypoints(img1_l, 10, 20)
-        kp1_l = self.get_nottiled_keypoints(img1_l)
+        kp1_l = self.get_tiled_keypoints(img1_l, 10, 20)
+        # kp1_l = self.get_nottiled_keypoints(img1_l)
 
         # Track the keypoints
         tp1_l, tp2_l = self.track_keypoints(img1_l, img2_l, kp1_l)
@@ -562,9 +504,6 @@ class VisualOdometry():
         # Estimate the transformation matrix
         transformation_matrix = self.estimate_pose(tp1_l, tp2_l, Q1, Q2)
 
-        # TODO: REMOVE: Print the average confidence of the keypoints:
-        self.confidences.append(np.mean([kp.response for kp in kp1_l]))
-
         if show:
             # Show the matches and the disparity map:
             draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
@@ -574,8 +513,8 @@ class VisualOdometry():
             img = cv2.drawMatches(img1_l, tp1_l, img2_l, tp2_l, matches, None, **draw_params)
             disparity = self.disparities[i - 1]
             disparity = cv2.normalize(disparity, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            cv2.imshow('disparity', disparity)
-            cv2.imshow('matches', img)
+            # cv2.imshow('disparity', disparity)
+            # cv2.imshow('matches', img)
             # Show the 2D keypoints:
             img1_l = cv2.drawKeypoints(img1_l, kp1_l, None, color=(255, 0, 0), flags=0)
             cv2.imshow('keypoints', img1_l)

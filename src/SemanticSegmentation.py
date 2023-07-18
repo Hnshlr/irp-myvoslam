@@ -3,10 +3,8 @@ import os
 from pixellib.semantic import semantic_segmentation     # second model
 
 # SEMANTIC SEGMENTATION:
-# seg = semantic_segmentation()
-# seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
-
-seg = None
+seg = semantic_segmentation()
+seg.load_ade20k_model("src/models/deeplabv3_xception65_ade20k.h5")
 
 def get_total_upscaled_mask(image_path, features):
     if not features:

@@ -4,13 +4,6 @@ import os
 from tqdm import tqdm
 
 def load_calib(filepath):
-    with open(filepath, 'r') as f:
-        params = np.fromstring(f.readline(), dtype=np.float64, sep=' ')
-        P = np.reshape(params, (3, 4))
-        K = P[0:3, 0:3]
-    return K, P
-
-def load_calib_v2(filepath):
     # Store all lines in a list of strings:
     with open(filepath, 'r') as f:
         lines = f.readlines()
