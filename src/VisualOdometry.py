@@ -48,7 +48,7 @@ class VisualOdometry():
             raise ValueError("Method must be 'mono' or 'stereo'.")
 
     # PATH ESTIMATION (MONO/STEREO):
-    def estimate_path(self, show_matches=False, features=[None].clear()):
+    def estimate_path(self, view=False, features=[None].clear()):
         gt_path, est_path = [], []
         if self.method == "mono":
             for i, gt_pose in enumerate(tqdm(self.gt_poses, unit="pose", desc="Processing dataset")):
@@ -56,11 +56,11 @@ class VisualOdometry():
                     cur_pose = gt_pose
                 else:
                     transf = self.get_pose_mono(i,
-                                                show=show_matches,
+                                                show=view,
                                                 prev_mask=self.semantic_segmentation.get_total_upscaled_mask(self.images_paths[i - 1]) if self.semantic_segmentation is not None else None,
                                                 curr_mask=self.semantic_segmentation.get_total_upscaled_mask(self.images_paths[i]) if self.semantic_segmentation is not None else None
                                                 ) # Get the transformation matrix between the current and previous image
-                    cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))  # Update the current pose
+                    cur_pose = np.matmul(cur_pose, transf)  # Update the current pose
                 gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))  # Append the ground truth path
                 est_path.append((cur_pose[0, 3], cur_pose[2, 3]))  # Append the estimated path
             return gt_path, est_path
@@ -69,7 +69,7 @@ class VisualOdometry():
                 if i < 1:
                     cur_pose = gt_pose
                 else:
-                    transf = self.get_pose(i, show=show_matches)
+                    transf = self.get_pose(i, show=view)
                     cur_pose = np.matmul(cur_pose, transf)
                 gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))
                 est_path.append((cur_pose[0, 3], cur_pose[2, 3]))
@@ -226,6 +226,7 @@ class VisualOdometry():
         R, t = self.decomp_essential_mat(E, q1, q2)
 
         transformation_matrix = form_transf(R, np.squeeze(t))
+        transformation_matrix = np.linalg.inv(transformation_matrix)
         return transformation_matrix
 
     # STEREO METHODS=
