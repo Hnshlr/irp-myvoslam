@@ -1,8 +1,3 @@
-# IMPORTS=
-import time
-import matplotlib.pyplot as plt
-import numpy as np
-
 # MODELS=
 from src.Measurement import *
 from src.VisualOdometry import *
@@ -15,10 +10,14 @@ dataset_indexes = skitti_indexes
 
 # SETTINGS=
 methods = ["mono", "stereo"][0:1]
-features = ["earth", "grass", "sidewalk", "road", "building"].clear()
+#   - VIEW=
 showMatches = True
 saveData = False
-cv2.destroyAllWindows()
+#   - SEMANTIC SEGMENTATION=
+doSegmentate = False
+model_path = "src/models/deeplabv3_xception65_ade20k.h5"
+features = ["earth", "grass", "sidewalk", "road", "building"][3:4]
+
 
 # MAIN:
 def main():
@@ -27,9 +26,16 @@ def main():
     # FOR EACH DATASET:∂
     for dataset_path in [os.path.join(input_dir, dataset_index) for dataset_index in dataset_indexes]:
         for method in methods:
-            # VISUAL ODOMETRY:
-            vo = VisualOdometry(dataset_path, method=method)   # Initialize the Visual Odometry class
-            gt_path, est_path = vo.estimate_path(show_matches=showMatches, features=features)     # Estimate the path
+            # VISUAL ODOMETRY: Initialize the Visual Odometry class
+            vo = VisualOdometry(dataset_path,
+                                method=method,
+                                semantic_segmentation_parameters={
+                                    "segmentate": doSegmentate,
+                                    "model_path": model_path,
+                                    "features": features
+                                }
+                                )
+            gt_path, est_path = vo.estimate_path(show_matches=showMatches)     # Estimate the path
             # MEASUREMENTS:
             x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff = get_xy_values(gt_path, est_path, print_values=True)  # Get the measurements
             # SAVE DATA:

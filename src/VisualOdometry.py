@@ -1,17 +1,20 @@
-import os
-import numpy as np
-import cv2
-from tqdm import tqdm
 from scipy.optimize import least_squares
-import random
 
 from src.Utils import *
 from src.SemanticSegmentation import *
 
 class VisualOdometry():
-    def __init__(self, data_dir, method="mono"):
+    def __init__(self, data_dir, method="mono", semantic_segmentation_parameters=None):
         self.method = method
         self.dataset_dir_path = data_dir
+
+        # Semantic segmentation:
+        self.semantic_segmentation = None
+        if semantic_segmentation_parameters is not None:
+            if semantic_segmentation_parameters["segmentate"]:
+                self.semantic_segmentation = SemanticSegmentation(semantic_segmentation_parameters["model_path"], semantic_segmentation_parameters["features"])
+
+
         if method == "mono":
             self.K, self.P = load_calib(os.path.join(data_dir, 'calib.txt'))
             self.gt_poses = load_poses(os.path.join(data_dir, 'poses.txt'))
@@ -53,8 +56,9 @@ class VisualOdometry():
                     cur_pose = gt_pose
                 else:
                     transf = self.get_pose_mono(i,
-                                                show=show_matches, prev_mask=get_total_upscaled_mask(self.images_paths[i - 1], features=features),
-                                                curr_mask=get_total_upscaled_mask(self.images_paths[i], features=features)
+                                                show=show_matches,
+                                                prev_mask=self.semantic_segmentation.get_total_upscaled_mask(self.images_paths[i - 1]) if self.semantic_segmentation is not None else None,
+                                                curr_mask=self.semantic_segmentation.get_total_upscaled_mask(self.images_paths[i]) if self.semantic_segmentation is not None else None
                                                 ) # Get the transformation matrix between the current and previous image
                     cur_pose = np.matmul(cur_pose, np.linalg.inv(transf))  # Update the current pose
                 gt_path.append((gt_pose[0, 3], gt_pose[2, 3]))  # Append the ground truth path
@@ -160,21 +164,6 @@ class VisualOdometry():
 
         return q1, q2
 
-    def get_pose_mono(self, i, show=False, prev_mask=None, curr_mask=None):
-
-        q1, q2 = self.get_matches(i,
-                                  show=show,
-                                  prev_mask=prev_mask,
-                                  curr_mask=curr_mask
-                                  )  # Get the matches between the current and previous image
-
-        E, _ = cv2.findEssentialMat(q1, q2, self.K, threshold=1)
-
-        R, t = self.decomp_essential_mat(E, q1, q2)
-
-        transformation_matrix = form_transf(R, np.squeeze(t))
-        return transformation_matrix
-
     def decomp_essential_mat(self, E, q1, q2):
         def sum_z_cal_relative_scale(R, t):
             # Get the transformation matrix
@@ -223,6 +212,21 @@ class VisualOdometry():
         t = t * relative_scale
 
         return [R1, t]
+
+    def get_pose_mono(self, i, show=False, prev_mask=None, curr_mask=None):
+
+        q1, q2 = self.get_matches(i,
+                                  show=show,
+                                  prev_mask=prev_mask,
+                                  curr_mask=curr_mask
+                                  )  # Get the matches between the current and previous image
+
+        E, _ = cv2.findEssentialMat(q1, q2, self.K, threshold=1)
+
+        R, t = self.decomp_essential_mat(E, q1, q2)
+
+        transformation_matrix = form_transf(R, np.squeeze(t))
+        return transformation_matrix
 
     # STEREO METHODS=
 
@@ -274,28 +278,32 @@ class VisualOdometry():
         residuals = np.vstack([q1_pred - q1.T, q2_pred - q2.T]).flatten()
         return residuals
 
-    def get_tiled_keypoints(self, img, tile_h, tile_w):
+    def get_keypoints(self, img, fto=True, tile_h=10, tile_w=20, max_kp_per_patch=10):
+
         def get_kps(x, y):
             impatch = img[y:y + tile_h, x:x + tile_w]
             keypoints = self.fastFeatures.detect(impatch)
             for pt in keypoints:
                 pt.pt = (pt.pt[0] + x, pt.pt[1] + y)
-            if len(keypoints) > 10:
+            if len(keypoints) > max_kp_per_patch:
                 keypoints = sorted(keypoints, key=lambda
                     x: -x.response)  # The reponse parameter is the strength of the keypoint (strengh means how well the keypoint can be described)
                 return keypoints[:10]
             return keypoints
-        h, w, *_ = img.shape
-        kp_list = [get_kps(x, y) for y in range(0, h, tile_h) for x in range(0, w, tile_w)]
-        kp_list_flatten = np.concatenate(kp_list)
-        return kp_list_flatten
 
-    def get_nottiled_keypoints(self, img):
-        keypoints = self.fastFeatures.detect(img)
-        keypoints = sorted(keypoints, key=lambda x: -x.response)[:2000]
-        for pt in keypoints:
-            pt.pt = (pt.pt[0], pt.pt[1])
-        return keypoints
+        if fto:
+            h, w, *_ = img.shape
+            kp_list = [get_kps(x, y) for y in range(0, h, tile_h) for x in range(0, w, tile_w)]
+            kp_list_flatten = np.concatenate(kp_list)
+            return kp_list_flatten
+
+        else:
+            max_total_kp_amount = tile_h * tile_w * max_kp_per_patch
+            keypoints = self.fastFeatures.detect(img)
+            keypoints = sorted(keypoints, key=lambda x: -x.response)[:max_total_kp_amount]
+            for pt in keypoints:
+                pt.pt = (pt.pt[0], pt.pt[1])
+            return keypoints
 
     def track_keypoints(self, img1,  img2, kp1, max_error=4):
         """
@@ -486,8 +494,7 @@ class VisualOdometry():
         img1_l, img2_l = self.images_l[i - 1:i + 1]
 
         # Get the tiled keypoints (top 10 best keypoints per tile)
-        kp1_l = self.get_tiled_keypoints(img1_l, 10, 20)
-        # kp1_l = self.get_nottiled_keypoints(img1_l)
+        kp1_l = self.get_keypoints(img1_l, fto=True, tile_h=10, tile_w=20, max_kp_per_patch=10)
 
         # Track the keypoints
         tp1_l, tp2_l = self.track_keypoints(img1_l, img2_l, kp1_l)
