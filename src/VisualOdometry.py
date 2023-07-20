@@ -209,22 +209,6 @@ class VisualOdometry():
 
         return [R1, t]
 
-    def get_pose_mono(self, i, show=False, prev_mask=None, curr_mask=None):
-
-        q1, q2 = self.get_matches(i,
-                                  show=show,
-                                  prev_mask=prev_mask,
-                                  curr_mask=curr_mask
-                                  )  # Get the matches between the current and previous image
-
-        E, _ = cv2.findEssentialMat(q1, q2, self.K, threshold=1)
-
-        R, t = self.decomp_essential_mat(E, q1, q2)
-
-        transformation_matrix = form_transf(R, np.squeeze(t))
-        transformation_matrix = np.linalg.inv(transformation_matrix)
-        return transformation_matrix
-
     # STEREO METHODS=
 
     def reprojection_residuals(self, dof, q1, q2, Q1, Q2):
