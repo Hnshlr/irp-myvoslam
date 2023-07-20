@@ -471,57 +471,75 @@ class VisualOdometry():
         transformation_matrix = form_transf(R, t)
         return transformation_matrix
 
-    def get_pose(self, i, show=True):
-        """
-        "(SCRATCH) - HOW TO STEPS:
-        Calculates the transformation matrix for the i'th frame
-        1. Get the left i-1'th image and i'th image (left only)
-        2. Get the tiled keypoints using the i-1'th left image
-        3. Track the keypoints from the i-1'th left image to the i'th left image using the kp1_l keypoints.
-        4. Calculate the disparity between the i-1'th left image and the i'th right image, and add it to
-        the list of disparities.
-        5. Calculate the right i-1'th ad i'th keypoints using the both i-1'th and i'th left images and the
-        i-1'th and i'th disparities.
-        6. Calculate the 3D points using the four sets of keypoints.
-        7. Obtain the transformation matrix using both the 3D points two sets of keypoints (either the left or right)
-        of the i-1'th and i'th image.
-        """
+    def get_pose(self, i, show=True, prev_mask=None, curr_mask=None):
 
-        # Get the i-1'th image and i'th image
-        img1_l, img2_l = self.images_l[i - 1:i + 1]
+        if self.method == "mono":
+            q1, q2 = self.get_matches(i,
+                                      show=show,
+                                      prev_mask=prev_mask,
+                                      curr_mask=curr_mask
+                                      )  # Get the matches between the current and previous image
 
-        # Get the tiled keypoints (top 10 best keypoints per tile)
-        kp1_l = self.get_keypoints(img1_l, fto=True, tile_h=10, tile_w=20, max_kp_per_patch=10)
+            E, _ = cv2.findEssentialMat(q1, q2, self.K_l, threshold=1)
 
-        # Track the keypoints
-        tp1_l, tp2_l = self.track_keypoints(img1_l, img2_l, kp1_l)
+            R, t = self.decomp_essential_mat(E, q1, q2)
 
-        # Calculate the disparities
-        self.disparities.append(np.divide(self.disparity.compute(img2_l, self.images_r[i]).astype(np.float32), 16))
+            transformation_matrix = form_transf(R, np.squeeze(t))
+            transformation_matrix = np.linalg.inv(transformation_matrix)
+            return transformation_matrix
 
-        # Calculate the right keypoints
-        tp1_l, tp1_r, tp2_l, tp2_r = self.calculate_right_qs(tp1_l, tp2_l, self.disparities[i - 1], self.disparities[i])
+        elif self.method == "stereo":
 
-        # Calculate the 3D points
-        Q1, Q2 = self.calc_3d(tp1_l, tp1_r, tp2_l, tp2_r)
+            # Get the i-1'th image and i'th image
+            img1_l, img2_l = self.images_l[i - 1:i + 1]
 
-        # Estimate the transformation matrix
-        transformation_matrix = self.estimate_pose(tp1_l, tp2_l, Q1, Q2)
+            # Get the tiled keypoints (top 10 best keypoints per tile)
+            kp1_l = self.get_keypoints(img1_l, do_FTO=self.do_FTO, GRID_H=self.GRID_H, GRID_W=self.GRID_W, max_kp_per_patch=self.PATCH_MAX_FEATURES)
 
-        if show:
-            # Show the matches and the disparity map:
-            draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
-            tp1_l = [cv2.KeyPoint(x, y, 1) for x, y in tp1_l]
-            tp2_l = [cv2.KeyPoint(x, y, 1) for x, y in tp2_l]
-            matches = [cv2.DMatch(i, i, 0) for i in range(len(tp1_l))]
-            img = cv2.drawMatches(img1_l, tp1_l, img2_l, tp2_l, matches, None, **draw_params)
-            disparity = self.disparities[i - 1]
-            disparity = cv2.normalize(disparity, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-            # cv2.imshow('disparity', disparity)
-            # cv2.imshow('matches', img)
-            # Show the 2D keypoints:
-            img1_l = cv2.drawKeypoints(img1_l, kp1_l, None, color=(255, 0, 0), flags=0)
-            cv2.imshow('keypoints', img1_l)
-            cv2.waitKey(200)
+            # Track the keypoints
+            tp1_l, tp2_l = self.track_keypoints(img1_l, img2_l, kp1_l)
 
-        return transformation_matrix
+            # Calculate the disparities
+            self.disparities.append(np.divide(self.disparity.compute(img2_l, self.images_r[i]).astype(np.float32), 16))
+
+            # Calculate the right keypoints
+            tp1_l, tp1_r, tp2_l, tp2_r = self.calculate_right_qs(tp1_l, tp2_l, self.disparities[i - 1], self.disparities[i])
+
+            # Calculate the 3D points
+            Q1, Q2 = self.calc_3d(tp1_l, tp1_r, tp2_l, tp2_r)
+
+            # Estimate the transformation matrix
+            transformation_matrix = self.estimate_pose(tp1_l, tp2_l, Q1, Q2)
+
+            if show:
+                # Show the matches and the disparity map:
+                draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
+                tp1_l = [cv2.KeyPoint(x, y, 1) for x, y in tp1_l]
+                tp2_l = [cv2.KeyPoint(x, y, 1) for x, y in tp2_l]
+                matches = [cv2.DMatch(i, i, 0) for i in range(len(tp1_l))]
+                img = cv2.drawMatches(img1_l, tp1_l, img2_l, tp2_l, matches, None, **draw_params)
+                disparity = self.disparities[i - 1]
+                disparity = cv2.normalize(disparity, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+                cv2.imshow('disparity', disparity)
+                cv2.imshow('matches', img)
+                # Show the 2D keypoints:
+                img1_l = cv2.drawKeypoints(img1_l, kp1_l, None, color=(255, 0, 0), flags=0)
+                cv2.imshow('keypoints', img1_l)
+                if self.do_FTO:
+                    grid_img = 255 * np.ones((img1_l.shape[0], img1_l.shape[1]), dtype=np.uint8)
+                    tile_height = int(img1_l.shape[0] / self.GRID_H)
+                    tile_width = int(img1_l.shape[1] / self.GRID_W)
+                    # Draw a black and white tile grid:
+                    for row in range(self.GRID_H):
+                        for col in range(self.GRID_W):
+                            top_left = (col * tile_width, row * tile_height)
+                            bottom_right = ((col + 1) * tile_width, (row + 1) * tile_height)
+                            if (row + col) % 2 == 0:
+                                cv2.rectangle(grid_img, top_left, bottom_right, 0, -1)
+                    cv2.imshow('grid', grid_img)
+                else:
+                    grid_img = 255 * np.ones((img1_l.shape[0], img1_l.shape[1]), dtype=np.uint8)
+                    cv2.imshow('grid', grid_img)
+                cv2.waitKey(1)
+
+            return transformation_matrix
