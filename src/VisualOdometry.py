@@ -274,6 +274,8 @@ class VisualOdometry():
 
         if do_FTO:
             h, w, *_ = img.shape
+            tile_h = h // GRID_H
+            tile_w = w // GRID_W
             kp_list = [get_kps(x, y) for y in range(0, h, tile_h) for x in range(0, w, tile_w)]
             kp_list_flatten = np.concatenate(kp_list)
             return kp_list_flatten
