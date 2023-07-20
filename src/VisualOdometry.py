@@ -156,7 +156,7 @@ class VisualOdometry():
             for i in range(len(q1)):
                 cv2.arrowedLine(img4, tuple(q1[i]), tuple(q2[i]), (255, 0, 0), 1)
             cv2.imshow("image4", img4)
-            cv2.waitKey(200)
+            cv2.waitKey(1)
 
         return q1, q2
 
@@ -279,7 +279,7 @@ class VisualOdometry():
             return kp_list_flatten
 
         else:
-            max_total_kp_amount = tile_h * tile_w * max_kp_per_patch
+            max_total_kp_amount = 3000
             keypoints = self.fastFeatures.detect(img)
             keypoints = sorted(keypoints, key=lambda x: -x.response)[:max_total_kp_amount]
             for pt in keypoints:
