@@ -119,7 +119,7 @@ class VisualOdometry():
         # good = [good[i] for i in range(len(mask)) if mask[i]]
 
         # 2. Filter out the matches whose distance is larger than 1/10th of the image height:
-        image_height = self.images[i].shape[0]
+        image_height = self.images_l[i].shape[0]
         mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
         q1 = q1[mask]
         q2 = q2[mask]
@@ -141,18 +141,18 @@ class VisualOdometry():
 
         if show:
             # Show the keypoints of the good matches:
-            img1 = cv2.drawKeypoints(self.images[i - 1], kp1, None, color=(255, 0, 0))
-            img2 = cv2.drawKeypoints(self.images[i], kp2, None, color=(255, 0, 0))
+            img1 = cv2.drawKeypoints(self.images_l[i - 1], kp1, None, color=(255, 0, 0))
+            img2 = cv2.drawKeypoints(self.images_l[i], kp2, None, color=(255, 0, 0))
             img23 = np.concatenate((img1, img2), axis=1)
             cv2.imshow("image23", img23)
 
             # Show the good matches:
             draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
-            img3 = cv2.drawMatches(self.images[i], kp1, self.images[i-1], kp2, good, None, **draw_params)
+            img3 = cv2.drawMatches(self.images_l[i], kp1, self.images_l[i-1], kp2, good, None, **draw_params)
             cv2.imshow("image3", img3)
 
             # Draw the optical flow:
-            img4 = self.images[i].copy()
+            img4 = self.images_l[i].copy()
             for i in range(len(q1)):
                 cv2.arrowedLine(img4, tuple(q1[i]), tuple(q2[i]), (255, 0, 0), 1)
             cv2.imshow("image4", img4)
@@ -165,10 +165,10 @@ class VisualOdometry():
             # Get the transformation matrix
             T = form_transf(R, t)
             # Make the projection matrix
-            P = np.matmul(np.concatenate((self.K, np.zeros((3, 1))), axis=1), T)
+            P = np.matmul(np.concatenate((self.K_l, np.zeros((3, 1))), axis=1), T)
 
             # Triangulate the 3D points
-            hom_Q1 = cv2.triangulatePoints(self.P, P, q1.T, q2.T)
+            hom_Q1 = cv2.triangulatePoints(self.P_l, P, q1.T, q2.T)
             # Also seen from cam 2
             hom_Q2 = np.matmul(T, hom_Q1)
 
