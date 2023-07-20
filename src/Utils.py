@@ -43,9 +43,12 @@ def load_poses(filepath):
             poses.append(T)
     return poses
 
-def load_images(filepath):
+def load_images(filepath, monitor=False):
     image_paths = [os.path.join(filepath, file) for file in sorted(os.listdir(filepath))]
-    return [cv2.imread(path, cv2.IMREAD_GRAYSCALE) for path in tqdm(image_paths, desc="Loading images")]
+    if monitor:
+        return [cv2.imread(path, cv2.IMREAD_GRAYSCALE) for path in tqdm(image_paths, desc="Loading images", leave=False)]
+    else:
+        return [cv2.imread(path, cv2.IMREAD_GRAYSCALE) for path in image_paths]
 
 def form_transf(R, t):
     T = np.eye(4, dtype=np.float64)
