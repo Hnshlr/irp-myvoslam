@@ -4,44 +4,49 @@ from src.Utils import *
 from src.SemanticSegmentation import *
 
 class VisualOdometry():
-    def __init__(self, data_dir, method="mono", semantic_segmentation_parameters=None):
+    def __init__(self, data_dir, method="mono", semantic_segmentation_parameters=None, fto_parameters=None):
         self.method = method
         self.dataset_dir_path = data_dir
 
-        # Semantic segmentation:
+        # CALIBRATION, GROUND TRUTH POSES AND IMAGES:
+        self.K_l, self.P_l, self.K_r, self.P_r = load_calib_LR(data_dir + '/calib.txt')
+        self.gt_poses = load_poses(data_dir + '/poses.txt')
+        self.images_l = load_images(data_dir + '/image_0')
+        self.images_r = load_images(data_dir + '/image_1')
+
+        # SEMANTIC SEGMENTATION:
         self.semantic_segmentation = None
         if semantic_segmentation_parameters is not None:
             if semantic_segmentation_parameters["segmentate"]:
                 self.semantic_segmentation = SemanticSegmentation(semantic_segmentation_parameters["model_path"], semantic_segmentation_parameters["features"])
 
+        # FRAME TILE OPTIMIZATION (FTO):
+        self.fto_parameters = fto_parameters
+        self.do_FTO = fto_parameters["do_FTO"]
+        self.GRID_H = fto_parameters["grid_h"]
+        self.GRID_W = fto_parameters["grid_w"]
+        self.PATCH_MAX_FEATURES = fto_parameters["patch_max_features"]
+
+        # PATHS= (FOR SEMANTIC SEGMENTATION)
+        images_dir_path = os.path.join(self.dataset_dir_path, "image_0")
+        self.images_paths = [os.path.join(images_dir_path, file) for file in sorted(os.listdir(images_dir_path))]
+        self.images_paths.sort()
 
         if method == "mono":
-            self.K, self.P = load_calib(os.path.join(data_dir, 'calib.txt'))
-            self.gt_poses = load_poses(os.path.join(data_dir, 'poses.txt'))
-            self.images = load_images(os.path.join(data_dir, "image_0"))
-
+            # ORB+FLANN:
             self.orb = cv2.ORB_create(3000)
             FLANN_INDEX_LSH = 6
             index_params = dict(algorithm=FLANN_INDEX_LSH, table_number=6, key_size=12, multi_probe_level=1)
             search_params = dict(checks=50)
             self.flann = cv2.FlannBasedMatcher(indexParams=index_params, searchParams=search_params)
-
-            # PATHS= (FOR SEMANTIC SEGMENTATION)
-            images_dir_path = os.path.join(self.dataset_dir_path, "image_0")
-            self.images_paths = [os.path.join(images_dir_path, file) for file in sorted(os.listdir(images_dir_path))]
-            self.images_paths.sort()
         elif method == "stereo":
-            self.K_l, self.P_l, self.K_r, self.P_r = load_calib_LR(data_dir + '/calib.txt')
-            self.gt_poses = load_poses(data_dir + '/poses.txt')
-            self.images_l = load_images(data_dir + '/image_0')
-            self.images_r = load_images(data_dir + '/image_1')
-
             block = 11
             P1 = block * block * 8
             P2 = block * block * 32
             self.disparity = cv2.StereoSGBM_create(minDisparity=0, numDisparities=32, blockSize=block, P1=P1, P2=P2)
             self.disparities = [np.divide(self.disparity.compute(self.images_l[0], self.images_r[0]).astype(np.float32), 16)]
 
+            # FAST FEATURES DETECTOR + LK OPTICAL FLOW:
             self.fastFeatures = cv2.FastFeatureDetector_create()
             self.lk_params = dict(winSize=(15, 15), flags=cv2.MOTION_AFFINE, maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 50, 0.03))
         else:
