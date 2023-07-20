@@ -259,7 +259,7 @@ class VisualOdometry():
         residuals = np.vstack([q1_pred - q1.T, q2_pred - q2.T]).flatten()
         return residuals
 
-    def get_keypoints(self, img, fto=True, tile_h=10, tile_w=20, max_kp_per_patch=10):
+    def get_keypoints(self, img, do_FTO=True, GRID_H=10, GRID_W=20, max_kp_per_patch=10):
 
         def get_kps(x, y):
             impatch = img[y:y + tile_h, x:x + tile_w]
@@ -272,7 +272,7 @@ class VisualOdometry():
                 return keypoints[:10]
             return keypoints
 
-        if fto:
+        if do_FTO:
             h, w, *_ = img.shape
             kp_list = [get_kps(x, y) for y in range(0, h, tile_h) for x in range(0, w, tile_w)]
             kp_list_flatten = np.concatenate(kp_list)
