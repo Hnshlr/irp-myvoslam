@@ -77,24 +77,24 @@ class VisualOdometry():
 
     def get_matches(self, i, show=True, prev_mask=None, curr_mask=None):
         # VERSION 1: ORB + FLANN
-        # kp1, des1 = self.orb.detectAndCompute(self.images[i - 1], mask=prev_mask)
-        # kp2, des2 = self.orb.detectAndCompute(self.images[i], mask=curr_mask)
+        # kp1, des1 = self.orb.detectAndCompute(self.images_l[i - 1], mask=prev_mask)
+        # kp2, des2 = self.orb.detectAndCompute(self.images_l[i], mask=curr_mask)
         # matches = self.flann.knnMatch(des1, des2, k=2)
 
         # VERSION 2: FAST FEATURES DETECTOR + FLANN
         fast = cv2.FastFeatureDetector_create()
-        kp1 = fast.detect(self.images[i - 1], mask=prev_mask)
-        kp2 = fast.detect(self.images[i], mask=curr_mask)
-        kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
-        kp2, des2 = self.orb.compute(self.images[i], kp2)
+        kp1 = fast.detect(self.images_l[i - 1], mask=prev_mask)
+        kp2 = fast.detect(self.images_l[i], mask=curr_mask)
+        kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
+        kp2, des2 = self.orb.compute(self.images_l[i], kp2)
         matches = self.flann.knnMatch(des1, des2, k=2)
 
         # VERSION 3: SURF + FLANN
         # surf = cv2.xfeatures2d.SURF_create()
-        # kp1 = surf.detect(self.images[i - 1], mask=prev_mask)
-        # kp2 = surf.detect(self.images[i], mask=curr_mask)
-        # kp1, des1 = self.orb.compute(self.images[i - 1], kp1)
-        # kp2, des2 = self.orb.compute(self.images[i], kp2)
+        # kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
+        # kp2 = surf.detect(self.images_l[i], mask=curr_mask)
+        # kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
+        # kp2, des2 = self.orb.compute(self.images_l[i], kp2)
         # matches = self.flann.knnMatch(des1, des2, k=2)
 
         # Lowe's ratio test:
