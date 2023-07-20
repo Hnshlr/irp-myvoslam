@@ -2,7 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-def get_xy_values(gt_path, est_path, print_values=False):
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+def get_xy_values(gt_path, est_path):
     x_final_diff = np.abs(np.round(gt_path[-1][0] - est_path[-1][0], 2))
     y_final_diff = np.abs(np.round(gt_path[-1][1] - est_path[-1][1], 2))
     x_mean_diff = np.abs(np.round(np.mean([gt_path[i][0] - est_path[i][0] for i in range(len(gt_path))]), 2))
