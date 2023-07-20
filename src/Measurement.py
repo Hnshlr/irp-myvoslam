@@ -89,3 +89,138 @@ def plot_ncerrors(dataset_path, gt_path, est_paths):
                 + time.strftime("%Y-%m-%d_%H-%M") + ".png")
     plt.close()
     plt.show()
+
+def svo_fto_improvements(filepath=None, dataframe=None):
+    # Read the CSV file:
+    if filepath is not None:
+        df = pd.read_csv(filepath, sep=',', header=0)
+    elif dataframe is not None:
+        df = dataframe
+    else:
+        raise Exception("No CSV file or dataframe provided!")
+
+    # Gather the ATE and NC-ATE values for Stereo Visual Odometry method:
+    df_SVO = df[df['method'] == "SVO"]
+
+    # Gather the best ATE for the SVO with FTO, and the grid combo used:
+    df_best_ate = df\
+        .sort_values(['dataset', 'ate']) \
+        .drop_duplicates(subset=['dataset'], keep='first')
+
+    # Gather the best NC-ATE for the SVO with FTO, and the grid combo used:
+    df_best_nc_ate = df\
+                .sort_values(['dataset', 'nc_ate'])\
+                .drop_duplicates(subset=['dataset'], keep='first')
+
+    # Add lines in a single dataframe:
+    df_ = pd.concat([df_SVO, df_best_ate, df_best_nc_ate]) \
+        .sort_values(['dataset', 'method']) \
+        .reset_index()
+
+    # Gather the dataset names:
+    dataset_indexes = df_['dataset'].drop_duplicates()
+    dataset_indexes = dataset_indexes.to_numpy()
+    dataset_indexes.sort()
+    dataset_indexes = dataset_indexes[np.argsort([len(x) for x in dataset_indexes])]
+
+    # Gather the datasets whose ATE is better using FTO:
+    dataset_whose_ate_is_better_using_fto = []
+    for dataset in dataset_indexes:
+        svo_ate = np.min(df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVO')]['ate'].values)
+        svo_ate = float(svo_ate)
+        try:
+            fto_ate = np.min([float(value) for value in
+                              df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['ate'].values])
+        except:
+            fto_ate = np.inf
+        fto_ate = float(fto_ate)
+        if fto_ate < svo_ate:
+            dataset_whose_ate_is_better_using_fto.append(dataset)
+
+    # Gather the datasets whose NC-ATE is better using FTO:
+    dataset_whose_nc_ate_is_better_using_fto = []
+    for dataset in dataset_indexes:
+        svo_nc_ate = np.min(df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVO')]['nc_ate'].values)
+        svo_nc_ate = float(svo_nc_ate)
+        try:
+            fto_nc_ate = np.min([float(value) for value in
+                                 df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['nc_ate'].values])
+        except:
+            fto_nc_ate = np.inf
+        fto_nc_ate = float(fto_nc_ate)
+        if fto_nc_ate < svo_nc_ate:
+            dataset_whose_nc_ate_is_better_using_fto.append(dataset)
+
+    # Gather the datasets who benefited from FTO:
+    data_who_FTO_improved_either_ate_or_nc_ate = []
+    for dataset in dataset_indexes:
+        if dataset in dataset_whose_ate_is_better_using_fto or dataset in dataset_whose_nc_ate_is_better_using_fto:
+            data_who_FTO_improved_either_ate_or_nc_ate.append(dataset)
+
+    # Gather the datasets who did not benefit from FTO:
+    dataset_whose_FTO_did_not_improve_ate_nor_nc_ate = []
+    for dataset in dataset_indexes:
+        if dataset not in data_who_FTO_improved_either_ate_or_nc_ate:
+            dataset_whose_FTO_did_not_improve_ate_nor_nc_ate.append(dataset)
+
+
+    # For each dataset who FTO improved either the ATE or Non-cumulative ATE, print the % of improvement:
+    for dataset in data_who_FTO_improved_either_ate_or_nc_ate:
+        svo_ate = np.min(df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVO')]['ate'].values)
+        svo_ate = float(svo_ate)
+        fto_ate = np.min(
+            [float(value) for value in df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['ate'].values])
+        fto_ate = float(fto_ate)
+        svo_nc_ate = np.min(df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVO')]['nc_ate'].values)
+        svo_nc_ate = float(svo_nc_ate)
+        fto_nc_ate = np.min(
+            [float(value) for value in df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['nc_ate'].values])
+        fto_nc_ate = float(fto_nc_ate)
+        # print("For", dataset, "the Non-cumulative ATE improved by ", np.round((svo_nc_ate - fto_nc_ate) / svo_nc_ate * 100, 2), "%", " and the ATE improved by ", np.round((svo_ate - fto_ate) / svo_ate * 100, 2), "% using FTO.")
+
+    # Create an array containing the % of improvement for each dataset of the ATE and NC-ATE, with the GRID combo used
+    # (if FTO did not improve the ATE or NC-ATE, the value for the ate and nc_ate and the GRID combo used is np.nan):
+    df_ate = pd.DataFrame(columns=['dataset', 'GRID_H', 'GRID_W', 'SVO_ATE', 'SVOFTO_ATE', 'ATE_improvement'])
+    for dataset in dataset_indexes:
+        svo_ate = np.min(df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVO')]['ate'].values)
+        svo_ate = float(svo_ate)
+        try:
+            fto_ate = np.min([float(value) for value in
+                              df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['ate'].values])
+            fto_ate = float(fto_ate)
+            grid_h = df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['GRID_H'].values[0]
+            grid_w = df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['GRID_W'].values[0]
+        except:
+            fto_ate = np.nan
+            grid_h = np.nan
+            grid_w = np.nan
+        if fto_ate < svo_ate:
+            ate_improvement = np.round((svo_ate - fto_ate) / svo_ate * 100, 2)
+        else:
+            ate_improvement = np.nan
+        df_ate = df_ate.append({'dataset': dataset, 'GRID_H': grid_h, 'GRID_W': grid_w, 'SVO_ATE': svo_ate,
+                                'SVOFTO_ATE': fto_ate, 'ATE_improvement': ate_improvement}, ignore_index=True)
+
+    df_nc_ate = pd.DataFrame(columns=['dataset', 'GRID_H', 'GRID_W', 'SVO_NC_ATE', 'SVOFTO_NC_ATE', 'NC_ATE_improvement'])
+
+    for dataset in dataset_indexes:
+        svo_nc_ate = np.min(df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVO')]['nc_ate'].values)
+        svo_nc_ate = float(svo_nc_ate)
+        try:
+            fto_nc_ate = np.min([float(value) for value in
+                                 df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['nc_ate'].values])
+            fto_nc_ate = float(fto_nc_ate)
+            grid_h = df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['GRID_H'].values[0]
+            grid_w = df_[(df_['dataset'] == dataset) & (df_['method'] == 'SVOFTO')]['GRID_W'].values[0]
+        except:
+            fto_nc_ate = np.nan
+            grid_h = np.nan
+            grid_w = np.nan
+        if fto_nc_ate < svo_nc_ate:
+            nc_ate_improvement = np.round((svo_nc_ate - fto_nc_ate) / svo_nc_ate * 100, 2)
+        else:
+            nc_ate_improvement = np.nan
+        df_nc_ate = df_nc_ate.append({'dataset': dataset, 'GRID_H': grid_h, 'GRID_W': grid_w, 'SVO_NC_ATE': svo_nc_ate,
+                                      'SVOFTO_NC_ATE': fto_nc_ate, 'NC_ATE_improvement': nc_ate_improvement}, ignore_index=True)
+
+    return df_ate, df_nc_ate
