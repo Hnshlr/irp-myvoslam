@@ -15,6 +15,18 @@ def get_xy_values(gt_path, est_path):
     y_max_diff = np.round(np.max([np.abs(gt_path[i][1] - est_path[i][1]) for i in range(len(gt_path))]), 2)
     return x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff
 
+def get_ate(gt_path, est_path):
+    gt_path = np.array(gt_path)
+    est_path = np.array(est_path)
+    errors = np.linalg.norm(gt_path - est_path, axis=1)
+    non_cumulative_errors = np.concatenate(([0], [errors[i] - errors[i - 1] for i in range(1, len(errors))]))
+    ate = np.mean(errors)
+    nc_ate = np.mean(non_cumulative_errors)
+    ate = np.round(ate, 2 - int(np.floor(np.log10(abs(ate)))) - 1)
+    nc_ate = np.round(nc_ate, 2 - int(np.floor(np.log10(abs(nc_ate)))) - 1)
+    return ate, nc_ate
+
+
 # PLOT THE MONO, STEREO AND GT PATHS:
 def plot_poses(dataset_path, gt_path, est_paths):
     plt.plot([gt_path[i][0] for i in range(len(gt_path))], [gt_path[i][1] for i in range(len(gt_path))], label="Ground Truth", color="blue")
