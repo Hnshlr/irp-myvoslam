@@ -1,5 +1,7 @@
+# IMPORTS=
 from scipy.optimize import least_squares
 
+# MODELS=
 from src.Utils import *
 from src.SemanticSegmentation import *
 
