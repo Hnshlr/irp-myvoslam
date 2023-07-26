@@ -70,4 +70,5 @@ if __name__ == "__main__":
         if filename.endswith('.csv'):
             print(filename)
             df_ate, df_nc_ate = svo_fto_improvements(filepath=output_dir + filename)
-            df_ate.to_csv(output_dir + filename[:-4] + '_COMPARISON.csv', index=False)
+            df_ate.to_csv(output_dir + filename[:-4] + '_ATE_COMPARISON.csv', index=False)
+            df_nc_ate.to_csv(output_dir + filename[:-4] + '_NCATE_COMPARISON.csv', index=False)
