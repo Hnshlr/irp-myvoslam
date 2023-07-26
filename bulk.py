@@ -9,7 +9,7 @@ from src.VisualOdometry import *
 #   - DATA=
 input_dir = "src/data/input/kitti/"
 output_dir = "src/data/output/kitti/SVOFTO/"
-skitti_indexes = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"][0:1]
+skitti_indexes = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"]
 dataset_indexes = skitti_indexes
 #   - VIEW=
 monitor = True
