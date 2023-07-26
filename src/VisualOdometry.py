@@ -427,7 +427,7 @@ class VisualOdometry():
 
             # Choose 6 feature points using the iterator i and the number of feature points, starting from 0:
             sample_idx = (np.arange(i, i + 6) % q1.shape[0]) if q1.shape[0] > 6 else np.arange(q1.shape[0])
-            
+
             sample_q1, sample_q2, sample_Q1, sample_Q2 = q1[sample_idx], q2[sample_idx], Q1[sample_idx], Q2[sample_idx]
 
             # Make the start guess
