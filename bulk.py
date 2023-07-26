@@ -10,7 +10,7 @@ skitti_indexes = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S
 dataset_indexes = skitti_indexes
 #   - VIEW=
 monitor = True
-view = False
+view = True
 
 # Combos of 2000 features:
 def main():
@@ -58,17 +58,17 @@ def main():
                 except:
                     print(f"{dataset_path.split('/')[-1]},SVOFTO,{GRID_H},{GRID_W},{PATCH_MAX_FEATURES},{GRID_H * GRID_W * PATCH_MAX_FEATURES},CRASHED,CRASHED")
                     csv += f"\n{dataset_path.split('/')[-1]},SVOFTO,{GRID_H},{GRID_W},{PATCH_MAX_FEATURES},{GRID_H * GRID_W * PATCH_MAX_FEATURES},CRASHED,CRASHED"
-    with open(output_dir + "SKITTI11_BULK-SVO-FTO_"+ time.strftime("%Y%m%d-%H%M%S") +".csv", "w") as f:
+    with open(output_dir + "RAW/" + "SKITTI11_BULK-SVO-FTO_"+ time.strftime("%Y%m%d-%H%M%S") +".csv", "w") as f:
         f.write(csv)
 
 
 if __name__ == "__main__":
-    for i in range(9):
+    for i in range(2):
         main()
-    filenames = os.listdir(output_dir)
+    filenames = os.listdir(output_dir + "RAW/")
     for filename in filenames:
         if filename.endswith('.csv'):
             print(filename)
-            df_ate, df_nc_ate = svo_fto_improvements(filepath=output_dir + filename)
-            df_ate.to_csv(output_dir + filename[:-4] + '_ATE_COMPARISON.csv', index=False)
-            df_nc_ate.to_csv(output_dir + filename[:-4] + '_NCATE_COMPARISON.csv', index=False)
+            df_ate, df_nc_ate = svo_fto_improvements(filepath=output_dir + "RAW/" + filename)
+            df_ate.to_csv(output_dir + "ATE/" + filename[:-4] + '_ATE_COMPARISON.csv', index=False)
+            df_nc_ate.to_csv(output_dir + "NCATE/" + filename[:-4] + '_NCATE_COMPARISON.csv', index=False)
