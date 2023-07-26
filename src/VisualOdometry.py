@@ -457,6 +457,8 @@ class VisualOdometry():
         transformation_matrix = form_transf(R, t)
         return transformation_matrix
 
+    # COMMON:
+
     def get_pose(self, i, show=True, prev_mask=None, curr_mask=None):
 
         if self.method == "mono":
