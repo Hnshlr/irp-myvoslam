@@ -8,6 +8,8 @@ It aims to provide an analysis of the extent to which Visual Odometry can achiev
 
 © Copyright 2023, All rights reserved to Hans Haller, CSTE-CIDA Student at Cranfield Uni. SATM, Cranfield, UK.
 
+‎ 
+
 ## Setting up the application
 
 ### Initiate the virtual environment
@@ -36,6 +38,7 @@ To install the dependencies, run the following command:
 
 This will install all the required packages for the project.
 
+
 ### Run the application
 
 Once the virtual environment is now set up and ready to use, the user can start the application by running the app.py file through their IDE, or using the following command:
@@ -45,6 +48,8 @@ Once the virtual environment is now set up and ready to use, the user can start 
 ### You're set to go!
 
 If you have any questions, please contact me at ```hans.haller.885@cranfield.ac.uk```
+
+‎ 
 
 ## Running specific tasks
 
