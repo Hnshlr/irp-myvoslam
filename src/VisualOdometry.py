@@ -420,6 +420,7 @@ class VisualOdometry():
         min_error = float('inf')
         early_termination = 0
 
+
         for _ in range(max_iter):
             # Choose 6 random feature points
             sample_idx = np.random.choice(range(q1.shape[0]), 6)
@@ -436,7 +437,7 @@ class VisualOdometry():
             error = error.reshape((Q1.shape[0] * 2, 2))
             error = np.sum(np.linalg.norm(error, axis=1))
 
-            # Check if the error is less the the current min error. Save the result if it is
+            # Check if the error is less than the current min error. Save the result if it is
             if error < min_error:
                 min_error = error
                 out_pose = opt_res.x
@@ -444,7 +445,7 @@ class VisualOdometry():
             else:
                 early_termination += 1
             if early_termination == early_termination_threshold:
-                # If we have not fund any better result in early_termination_threshold iterations
+                # If we have not found any better result in early_termination_threshold iterations
                 break
 
         # Get the rotation vector
