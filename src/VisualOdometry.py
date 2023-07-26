@@ -1,5 +1,7 @@
 # IMPORTS=
 from scipy.optimize import least_squares
+from tkinter import *
+win= Tk()
 
 # MODELS=
 from src.Utils import *
@@ -485,6 +487,7 @@ class VisualOdometry():
 
             # Get the i-1'th image and i'th image
             img1_l, img2_l = self.images_l[i - 1:i + 1]
+            img1_r, img2_r = self.images_r[i - 1:i + 1]     # Right images, solely for viewing/drawing purposes
 
             # Get the tiled keypoints (top 10 best keypoints per tile)
             kp1_l = self.get_keypoints(img1_l, do_FTO=self.do_FTO, GRID_H=self.GRID_H, GRID_W=self.GRID_W, max_kp_per_patch=self.PATCH_MAX_FEATURES)
@@ -509,15 +512,17 @@ class VisualOdometry():
                 draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
                 tp1_l = [cv2.KeyPoint(x, y, 1) for x, y in tp1_l]
                 tp2_l = [cv2.KeyPoint(x, y, 1) for x, y in tp2_l]
+                tp1_r = [cv2.KeyPoint(x, y, 1) for x, y in tp1_r]
+                tp2_r = [cv2.KeyPoint(x, y, 1) for x, y in tp2_r]
                 matches = [cv2.DMatch(i, i, 0) for i in range(len(tp1_l))]
                 img = cv2.drawMatches(img1_l, tp1_l, img2_l, tp2_l, matches, None, **draw_params)
                 disparity = self.disparities[i - 1]
                 disparity = cv2.normalize(disparity, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-                cv2.imshow('disparity', disparity)
-                cv2.imshow('matches', img)
+                # Denormalize the disparity map:
+                disparity = np.uint8(disparity * 255)
+                disparity = cv2.cvtColor(disparity, cv2.COLOR_GRAY2BGR)
                 # Show the 2D keypoints:
                 img1_l = cv2.drawKeypoints(img1_l, kp1_l, None, color=(255, 0, 0), flags=0)
-                cv2.imshow('keypoints', img1_l)
                 if self.do_FTO:
                     grid_img = 255 * np.ones((img1_l.shape[0], img1_l.shape[1]), dtype=np.uint8)
                     tile_height = int(img1_l.shape[0] / self.GRID_H)
@@ -529,10 +534,30 @@ class VisualOdometry():
                             bottom_right = ((col + 1) * tile_width, (row + 1) * tile_height)
                             if (row + col) % 2 == 0:
                                 cv2.rectangle(grid_img, top_left, bottom_right, 0, -1)
-                    cv2.imshow('grid', grid_img)
                 else:
                     grid_img = 255 * np.ones((img1_l.shape[0], img1_l.shape[1]), dtype=np.uint8)
-                    cv2.imshow('grid', grid_img)
+                grid_img = cv2.cvtColor(grid_img, cv2.COLOR_GRAY2BGR)
+
+                # Draw the image for the TRACKED keypoints, and stack them:
+                four_images = np.zeros((img1_l.shape[0]*2, img1_l.shape[1]*2, 3), dtype=np.uint8)
+                t_img1_l = cv2.drawKeypoints(img1_l, tp1_l, None, color=(255, 0, 0), flags=0)
+                t_img2_l = cv2.drawKeypoints(img2_l, tp2_l, None, color=(255, 0, 0), flags=0)
+                t_img1_r = cv2.drawKeypoints(img1_r, tp1_r, None, color=(255, 0, 0), flags=0)
+                t_img2_r = cv2.drawKeypoints(img2_r, tp2_r, None, color=(255, 0, 0), flags=0)
+                four_images = np.vstack((np.hstack((t_img2_l, t_img2_r)), np.hstack((t_img1_l, t_img1_r))))
+                four_images = cv2.resize(four_images, (img1_l.shape[1], img1_l.shape[0]))
+
+
+                first = img
+                second = np.hstack((img1_l, four_images))
+                third = np.hstack((grid_img, disparity))
+                final_image = np.vstack((first, second, third))
+
+                screen_width = win.winfo_screenwidth()
+                final_image = ResizeWithAspectRatio(final_image, width=screen_width)
+
+                cv2.imshow('final_image', final_image)
+
                 cv2.waitKey(1)
 
             return transformation_matrix
