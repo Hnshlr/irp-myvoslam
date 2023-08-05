@@ -156,7 +156,7 @@ class VisualOdometry():
             # Draw the optical flow:
             img4 = self.images_l[i].copy()
             for i in range(len(q1)):
-                cv2.arrowedLine(img4, tuple(q1[i]), tuple(q2[i]), (255, 0, 0), 1)
+                cv2.arrowedLine(img4, tuple(map(int, q1[i])), tuple(map(int, q2[i])), (255, 0, 0), 1)
             cv2.imshow("image4", img4)
             cv2.waitKey(1)
 
