@@ -1,6 +1,6 @@
 tensorflow==2.6.0
 keras==2.6.0
-opencv-contrib-python
+opencv-contrib-python==4.5.1.48
 pixellib
 pandas
 numpy
