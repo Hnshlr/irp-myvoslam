@@ -1,0 +1,7 @@
+tensorflow==2.6.0
+keras==2.6.0
+opencv-contrib-python
+pixellib
+pandas
+numpy
+protobuf==3.20.1
