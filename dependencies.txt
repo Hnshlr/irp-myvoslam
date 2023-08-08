@@ -1,7 +1,5 @@
 tensorflow==2.6.0
 keras==2.6.0
-opencv-contrib-python==4.5.1.48
+opencv-contrib-python==3.4.2.17
 pixellib
 pandas
-numpy
-protobuf==3.20.1

@@ -78,26 +78,26 @@ class VisualOdometry():
     # MONO METHODS=
 
     def get_matches(self, i, show=True, prev_mask=None, curr_mask=None):
-        # VERSION 1: ORB + FLANN
+        # VERSION 1: ORB
         # kp1, des1 = self.orb.detectAndCompute(self.images_l[i - 1], mask=prev_mask)
         # kp2, des2 = self.orb.detectAndCompute(self.images_l[i], mask=curr_mask)
-        # matches = self.flann.knnMatch(des1, des2, k=2)
 
-        # VERSION 2: FAST FEATURES DETECTOR + FLANN
+        # VERSION 2: FAST (USING ORB TO COMPUTE DESCRIPTORS, AS FAST DOES NOT SUPPORT IT)
         fast = cv2.FastFeatureDetector_create()
         kp1 = fast.detect(self.images_l[i - 1], mask=prev_mask)
         kp2 = fast.detect(self.images_l[i], mask=curr_mask)
         kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
         kp2, des2 = self.orb.compute(self.images_l[i], kp2)
-        matches = self.flann.knnMatch(des1, des2, k=2)
 
-        # VERSION 3: SURF + FLANN
+        # VERSION 3: SURF (USING ORB TO COMPUTE DESCRIPTORS, AS SURF DOES NOT SUPPORT IT)
         # surf = cv2.xfeatures2d.SURF_create()
         # kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
         # kp2 = surf.detect(self.images_l[i], mask=curr_mask)
         # kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
         # kp2, des2 = self.orb.compute(self.images_l[i], kp2)
-        # matches = self.flann.knnMatch(des1, des2, k=2)
+
+        # FLANN:
+        matches = self.flann.knnMatch(des1, des2, k=2)
 
         # Lowe's ratio test:
         good = []   # Good matches
