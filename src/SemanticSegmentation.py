@@ -1,11 +1,12 @@
 import numpy as np
 import os
+import cv2
 from pixellib.semantic import semantic_segmentation     # second model
 
 class SemanticSegmentation:
     def __init__(self, model_path, features):
         self.seg = semantic_segmentation()
-        self.model = self.seg.load_ade20k_model(model_path)
+        self.seg.load_ade20k_model(model_path)
         self.features = features
 
     def get_total_upscaled_mask(self, image_path):
@@ -30,7 +31,15 @@ class SemanticSegmentation:
         # Otherwise, create it:
         else:
             # Extract the masks, and filter them by the features wanted:
-            segvalues, masks, output = self.model.segmentAsAde20k(image_path, overlay=True, extract_segmented_objects=True)
+            temp_path = os.path.join(*image_path.split("/")[:-2], "temp.png")
+            # Convert the image to a 3-channel image, and save it to a temporary file:
+            # NB: Required because the segmentation algorithm only works with 3-channel images.
+            image = cv2.imread(image_path)
+            cv2.imwrite(temp_path, image)
+            # Segment the image:
+            segvalues, masks, output = self.seg.segmentAsAde20k(temp_path, overlay=True, extract_segmented_objects=True)
+            # Remove the temporary file:
+            os.remove(temp_path)
             # Save the masks to a file:
             np.save(masks_path, masks)
         masks = [mask for mask in masks if mask['class_name'] in self.features]
