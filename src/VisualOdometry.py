@@ -83,18 +83,18 @@ class VisualOdometry():
         # kp2, des2 = self.orb.detectAndCompute(self.images_l[i], mask=curr_mask)
 
         # VERSION 2: FAST (USING ORB TO COMPUTE DESCRIPTORS, AS FAST DOES NOT SUPPORT IT)
-        fast = cv2.FastFeatureDetector_create()
-        kp1 = fast.detect(self.images_l[i - 1], mask=prev_mask)
-        kp2 = fast.detect(self.images_l[i], mask=curr_mask)
-        kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
-        kp2, des2 = self.orb.compute(self.images_l[i], kp2)
-
-        # VERSION 3: SURF (USING ORB TO COMPUTE DESCRIPTORS, AS SURF DOES NOT SUPPORT IT)
-        # surf = cv2.xfeatures2d.SURF_create()
-        # kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
-        # kp2 = surf.detect(self.images_l[i], mask=curr_mask)
+        # fast = cv2.FastFeatureDetector_create()
+        # kp1 = fast.detect(self.images_l[i - 1], mask=prev_mask)
+        # kp2 = fast.detect(self.images_l[i], mask=curr_mask)
         # kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
         # kp2, des2 = self.orb.compute(self.images_l[i], kp2)
+
+        # VERSION 3: SURF (USING ORB TO COMPUTE DESCRIPTORS, AS SURF DOES NOT SUPPORT IT)
+        surf = cv2.xfeatures2d.SURF_create()
+        kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
+        kp2 = surf.detect(self.images_l[i], mask=curr_mask)
+        kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
+        kp2, des2 = self.orb.compute(self.images_l[i], kp2)
 
         # FLANN:
         matches = self.flann.knnMatch(des1, des2, k=2)
@@ -146,18 +146,28 @@ class VisualOdometry():
             img1 = cv2.drawKeypoints(self.images_l[i - 1], kp1, None, color=(255, 0, 0))
             img2 = cv2.drawKeypoints(self.images_l[i], kp2, None, color=(255, 0, 0))
             img23 = np.concatenate((img1, img2), axis=1)
-            cv2.imshow("image23", img23)
+            # cv2.imshow("image23", img23)
 
             # Show the good matches:
             draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
             img3 = cv2.drawMatches(self.images_l[i], kp1, self.images_l[i-1], kp2, good, None, **draw_params)
-            cv2.imshow("image3", img3)
+            # cv2.imshow("image3", img3)
 
             # Draw the optical flow:
             img4 = self.images_l[i].copy()
             for i in range(len(q1)):
                 cv2.arrowedLine(img4, tuple(map(int, q1[i])), tuple(map(int, q2[i])), (255, 0, 0), 1)
-            cv2.imshow("image4", img4)
+            img4 = cv2.cvtColor(img4, cv2.COLOR_GRAY2BGR)
+            # cv2.imshow("image4", img4)
+
+            empty = np.zeros(img4.shape, dtype=np.uint8)
+            third = np.hstack((img4, empty))
+            final_image = np.vstack((img23, img3, third))
+
+            screen_width = win.winfo_screenwidth()
+            final_image = ResizeWithAspectRatio(final_image, width=screen_width)
+
+            cv2.imshow('final_image', final_image)
             cv2.waitKey(1)
 
         return q1, q2
