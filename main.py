@@ -7,23 +7,23 @@ from src.VisualOdometry import *
 # SETTINGS=
 # ⌞ DATA=
 input_dir = "src/data/input/kitti/"
-skitti_indexes = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"][6:7]
+skitti_indexes = ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"][6:8]
 kitti_indexes = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10"]
 dataset_indexes = skitti_indexes
 # ⌞ METHOD=
-methods = ["mono", "stereo"][0:1]
+methods = ["mono", "stereo"]
 # ⌞ SEMANTIC SEGMENTATION=
 do_SS = False
 model_path = "src/models/deeplabv3_xception65_ade20k.h5"
 features = ["earth", "grass", "sidewalk", "road", "building"]
 # ⌞ FRAME TILE OPTIMIZATION (FTO)=
-do_FTO = False
-GRID_H = 10
-GRID_W = 20
+do_FTO = True
+GRID_W = 40
+GRID_H = 20
 PATCH_MAX_FEATURES = 10
-# ⌞ VIEW=
-monitor = False
+# ⌞ VIEW/MONITOR/SAVE PARAMETERS=
 view = True
+monitor = True
 saveData = False
 
 # MAIN:

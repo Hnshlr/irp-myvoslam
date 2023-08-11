@@ -557,7 +557,6 @@ class VisualOdometry():
                 four_images = np.vstack((np.hstack((t_img2_l, t_img2_r)), np.hstack((t_img1_l, t_img1_r))))
                 four_images = cv2.resize(four_images, (img1_l.shape[1], img1_l.shape[0]))
 
-
                 first = img
                 second = np.hstack((img1_l, four_images))
                 third = np.hstack((grid_img, disparity))
