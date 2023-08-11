@@ -1,8 +1,8 @@
 mkdir -p src/data/input/kitti
 mkdir -p src/data/output/kitti
 
-curl -L "https://www.dropbox.com/scl/fi/7foz4er9snxed7equq1yo/skitti.zip?rlkey=zz687lyi9b0vju3byl0jnnqub&dl=1" -o src/data/input/kitti/kitti.zip
+curl -L "https://www.dropbox.com/scl/fi/7foz4er9snxed7equq1yo/skitti.zip?rlkey=zz687lyi9b0vju3byl0jnnqub&dl=1" -o src/data/input/kitti/skitti.zip
 
-unzip src/data/input/kitti/kitti.zip -d src/data/input/kitti
+unzip src/data/input/kitti/skitti.zip -d src/data/input/kitti
 
 rm src/data/input/kitti/kitti.zip
