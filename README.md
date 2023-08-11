@@ -12,6 +12,10 @@ It aims to provide an analysis of the extent to which Visual Odometry can achiev
 
 ## Setting up the application
 
+### Python version
+
+The application was developped with Python 3.7.17. All requirements to meet for this project to run are explained in the next section. **It is mandatory that the virtual environment is created with Python 3.7.17, otherwise dependencies will not be installed correctly.**
+
 ### Initiate the virtual environment
 
 Once the repository of the project is cloned, or downloaded from Cranfield's Canvas, create a virtual environment for the project to store all packages the app requires. 
@@ -22,7 +26,7 @@ To create a virtual environment, first open your command prompt or terminal and 
 
 Once in the main directory, create a new virtual environment using the venv module in Python. The command to create a virtual environment is:
 
-```python3 -m venv venv```
+```python3.7 -m venv venv```
 
 This will create a new directory called "venv" in the backend directory, which will contain all the necessary files for their virtual environment. 
 
@@ -34,9 +38,21 @@ This will activate the virtual environment. You should see the name of the envir
 
 To install the dependencies, run the following command:
 
-```pip install -r requirements.txt```
+```pip3 install -r requirements.txt --no-cache-dir --no-dependencies```
 
 This will install all the required packages for the project.
+
+### Download the data
+
+To download the data, run the following command:
+
+```./scripts/curl-kitti.sh```
+
+or 
+
+```./scripts/wget-kitti.sh```
+
+This will download the data from the KITTI dataset, create the ```src/data/input/kitti``` and ```src/data/output/kitti``` directories, and unzip the data in the input directory. You must have either ```curl``` or ```wget``` installed on your machine for this to work.
 
 
 ### Run the application
