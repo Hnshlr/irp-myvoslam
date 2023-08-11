@@ -79,8 +79,8 @@ class VisualOdometry():
 
     def get_matches(self, i, show=True, prev_mask=None, curr_mask=None):
         # VERSION 1: ORB
-        # kp1, des1 = self.orb.detectAndCompute(self.images_l[i - 1], mask=prev_mask)
-        # kp2, des2 = self.orb.detectAndCompute(self.images_l[i], mask=curr_mask)
+        kp1, des1 = self.orb.detectAndCompute(self.images_l[i - 1], mask=prev_mask)
+        kp2, des2 = self.orb.detectAndCompute(self.images_l[i], mask=curr_mask)
 
         # VERSION 2: FAST (USING ORB TO COMPUTE DESCRIPTORS, AS FAST DOES NOT SUPPORT IT)
         # fast = cv2.FastFeatureDetector_create()
@@ -90,11 +90,11 @@ class VisualOdometry():
         # kp2, des2 = self.orb.compute(self.images_l[i], kp2)
 
         # VERSION 3: SURF (USING ORB TO COMPUTE DESCRIPTORS, AS SURF DOES NOT SUPPORT IT)
-        surf = cv2.xfeatures2d.SURF_create()
-        kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
-        kp2 = surf.detect(self.images_l[i], mask=curr_mask)
-        kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
-        kp2, des2 = self.orb.compute(self.images_l[i], kp2)
+        # surf = cv2.xfeatures2d.SURF_create()
+        # kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
+        # kp2 = surf.detect(self.images_l[i], mask=curr_mask)
+        # kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
+        # kp2, des2 = self.orb.compute(self.images_l[i], kp2)
 
         # FLANN:
         matches = self.flann.knnMatch(des1, des2, k=2)
@@ -121,11 +121,11 @@ class VisualOdometry():
         # good = [good[i] for i in range(len(mask)) if mask[i]]
 
         # 2. Filter out the matches whose distance is larger than 1/10th of the image height:
-        image_height = self.images_l[i].shape[0]
-        mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
-        q1 = q1[mask]
-        q2 = q2[mask]
-        good = [good[i] for i in range(len(mask)) if mask[i]]
+        # image_height = self.images_l[i].shape[0]
+        # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
+        # q1 = q1[mask]
+        # q2 = q2[mask]
+        # good = [good[i] for i in range(len(mask)) if mask[i]]
 
         # 3. Filter out the matches to keep only the matches that are in the 1/3th bottom of the image:
         # image_height = self.images[i].shape[0]
@@ -135,11 +135,11 @@ class VisualOdometry():
         # good = [good[i] for i in range(len(mask)) if mask[i]]
 
         # 4. Filter out the matches whose x distance is 3 times larger than the median x distance:
-        median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
-        mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
-        q1 = q1[mask]
-        q2 = q2[mask]
-        good = [good[i] for i in range(len(mask)) if mask[i]]
+        # median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
+        # mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
+        # q1 = q1[mask]
+        # q2 = q2[mask]
+        # good = [good[i] for i in range(len(mask)) if mask[i]]
 
         if show:
             # Show the keypoints of the good matches:
