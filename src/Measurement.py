@@ -24,7 +24,9 @@ def get_ate(gt_path, est_path):
     nc_ate = np.mean(non_cumulative_errors)
     ate = np.round(ate, 2 - int(np.floor(np.log10(abs(ate)))) - 1)
     nc_ate = np.round(nc_ate, 2 - int(np.floor(np.log10(abs(nc_ate)))) - 1)
-    return ate, nc_ate
+    ate_percent = np.round(ate / np.mean(np.linalg.norm(gt_path, axis=1)) * 100, 2)
+    nc_ate_percent = np.round(nc_ate / np.mean(np.linalg.norm(gt_path, axis=1)) * 100, 2)
+    return ate, nc_ate, ate_percent, nc_ate_percent
 
 
 # PLOT THE MONO, STEREO AND GT PATHS:
