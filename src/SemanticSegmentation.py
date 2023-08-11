@@ -4,10 +4,10 @@ import cv2
 from pixellib.semantic import semantic_segmentation     # second model
 
 class SemanticSegmentation:
-    def __init__(self, model_path, features):
+    def __init__(self, model_path, features_to_ignore):
         self.seg = semantic_segmentation()
         self.seg.load_ade20k_model(model_path)
-        self.features = features
+        self.features_to_ignore = features_to_ignore
 
     def get_total_upscaled_mask(self, image_path):
         """
@@ -17,7 +17,7 @@ class SemanticSegmentation:
         :return: The upscaled mask (meaning that it has the same dimensions as the original image) of the image,
         corresponding to the region for the feature detection algorithm to look for the features in.
         """
-        if not self.features:
+        if not self.features_to_ignore:
             return None
         # Remove the last two directories from the path:
         masks_dir_path = os.path.join(*image_path.split("/")[:-2], "masks/")
@@ -42,7 +42,7 @@ class SemanticSegmentation:
             os.remove(temp_path)
             # Save the masks to a file:
             np.save(masks_path, masks)
-        masks = [mask for mask in masks if mask['class_name'] in self.features]
+        masks = [mask for mask in masks if mask['class_name'] not in self.features_to_ignore]
         masks = [mask['masks'] for mask in masks]
         dimx, dimy = masks[0].shape
         mask = np.zeros((dimx, dimy), dtype=bool)

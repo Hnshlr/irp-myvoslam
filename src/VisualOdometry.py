@@ -22,7 +22,7 @@ class VisualOdometry():
         self.semantic_segmentation = None
         if semantic_segmentation_parameters is not None:
             if semantic_segmentation_parameters["segmentate"]:
-                self.semantic_segmentation = SemanticSegmentation(semantic_segmentation_parameters["model_path"], semantic_segmentation_parameters["features"])
+                self.semantic_segmentation = SemanticSegmentation(semantic_segmentation_parameters["model_path"], semantic_segmentation_parameters["features_to_ignore"])
 
         # FRAME TILE OPTIMIZATION (FTO):
         self.fto_parameters = fto_parameters

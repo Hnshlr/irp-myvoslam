@@ -16,6 +16,7 @@ methods = ["mono", "stereo"]
 do_SS = False
 model_path = "src/models/deeplabv3_xception65_ade20k.h5"
 features = ["earth", "grass", "sidewalk", "road", "building"]
+features_to_ignore = ["sky", "person", "car"]
 # ⌞ FRAME TILE OPTIMIZATION (FTO)=
 do_FTO = True
 GRID_W = 40
@@ -39,7 +40,7 @@ def main():
                 semantic_segmentation_parameters={
                     "segmentate": do_SS,
                     "model_path": model_path,
-                    "features": features
+                    "features_to_ignore": features_to_ignore
                 },
                 fto_parameters={
                     "do_FTO": do_FTO,
