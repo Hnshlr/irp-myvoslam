@@ -241,12 +241,12 @@ def svo_fto_improvements_v2(filepath=None, dataframe=None):
 
     # Gather the best ATE for the SVO with FTO, and the grid combo used:
     df_best_ate = df\
-        .sort_values(['dataset', 'ate_percent'])\
-        .drop_duplicates(subset=['dataset'], keep='first')
+        .sort_values(['dataset', 'ate'], ascending=[True, True])\
+        .drop_duplicates(subset=['dataset'], keep='first').reset_index()
 
     # Gather the best NC-ATE for the SVO with FTO, and the grid combo used:
     df_best_nc_ate = df\
-                .sort_values(['dataset', 'nc_ate_percent'])\
+                .sort_values(['dataset', 'nc_ate'])\
                 .drop_duplicates(subset=['dataset'], keep='first')
 
     # Add lines in a single dataframe:
