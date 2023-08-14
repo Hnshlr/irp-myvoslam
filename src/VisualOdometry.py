@@ -8,7 +8,7 @@ from src.Utils import *
 from src.SemanticSegmentation import *
 
 class VisualOdometry():
-    def __init__(self, data_dir, method="mono", semantic_segmentation_parameters=None, fto_parameters=None):
+    def __init__(self, data_dir, method="mono", semantic_segmentation_parameters=None, fto_parameters=None, doPMOR=False):
         self.method = method
         self.dataset_dir_path = data_dir
 
@@ -18,6 +18,9 @@ class VisualOdometry():
         self.images_l = load_images(data_dir + '/image_0')
         self.images_r = load_images(data_dir + '/image_1')
 
+        # PMOR:
+        self.doPMOR = doPMOR
+
         # SEMANTIC SEGMENTATION:
         self.semantic_segmentation = None
         if semantic_segmentation_parameters is not None:
@@ -25,11 +28,12 @@ class VisualOdometry():
                 self.semantic_segmentation = SemanticSegmentation(semantic_segmentation_parameters["model_path"], semantic_segmentation_parameters["features_to_ignore"])
 
         # FRAME TILE OPTIMIZATION (FTO):
-        self.fto_parameters = fto_parameters
-        self.do_FTO = fto_parameters["do_FTO"]
-        self.GRID_H = fto_parameters["grid_h"]
-        self.GRID_W = fto_parameters["grid_w"]
-        self.PATCH_MAX_FEATURES = fto_parameters["patch_max_features"]
+        if fto_parameters is not None:
+            self.fto_parameters = fto_parameters
+            self.do_FTO = fto_parameters["do_FTO"]
+            self.GRID_H = fto_parameters["grid_h"]
+            self.GRID_W = fto_parameters["grid_w"]
+            self.PATCH_MAX_FEATURES = fto_parameters["patch_max_features"]
 
         # PATHS= (FOR SEMANTIC SEGMENTATION)
         images_dir_path = os.path.join(self.dataset_dir_path, "image_0")
@@ -77,7 +81,7 @@ class VisualOdometry():
 
     # MONO METHODS=
 
-    def get_matches(self, i, show=True, prev_mask=None, curr_mask=None):
+    def get_matches(self, i, show=False, prev_mask=None, curr_mask=None):
         # VERSION 1: ORB
         kp1, des1 = self.orb.detectAndCompute(self.images_l[i - 1], mask=prev_mask)
         kp2, des2 = self.orb.detectAndCompute(self.images_l[i], mask=curr_mask)
@@ -113,33 +117,34 @@ class VisualOdometry():
         q1 = np.float32([kp1[m.queryIdx].pt for m in good])
         q2 = np.float32([kp2[m.trainIdx].pt for m in good])
 
-        # 1. Filter out the matches whose distance is 3 times larger than the median distance:
-        # median_y_distance = np.median(np.abs(q1[:, 1] - q2[:, 1]))
-        # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 6 * median_y_distance]).squeeze()
-        # q1 = q1[mask]
-        # q2 = q2[mask]
-        # good = [good[i] for i in range(len(mask)) if mask[i]]
+        if self.doPMOR:
+            # 1. Filter out the matches whose distance is 3 times larger than the median distance:
+            # median_y_distance = np.median(np.abs(q1[:, 1] - q2[:, 1]))
+            # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 6 * median_y_distance]).squeeze()
+            # q1 = q1[mask]
+            # q2 = q2[mask]
+            # good = [good[i] for i in range(len(mask)) if mask[i]]
 
-        # 2. Filter out the matches whose distance is larger than 1/10th of the image height:
-        # image_height = self.images_l[i].shape[0]
-        # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
-        # q1 = q1[mask]
-        # q2 = q2[mask]
-        # good = [good[i] for i in range(len(mask)) if mask[i]]
+            # 2. Filter out the matches whose distance is larger than 1/10th of the image height:
+            image_height = self.images_l[i].shape[0]
+            mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
+            q1 = q1[mask]
+            q2 = q2[mask]
+            good = [good[i] for i in range(len(mask)) if mask[i]]
 
-        # 3. Filter out the matches to keep only the matches that are in the 1/3th bottom of the image:
-        # image_height = self.images[i].shape[0]
-        # mask = np.array([q1[:, 1] > 2 * image_height / 3]).squeeze()
-        # q1 = q1[mask]
-        # q2 = q2[mask]
-        # good = [good[i] for i in range(len(mask)) if mask[i]]
+            # 3. Filter out the matches to keep only the matches that are in the 1/3th bottom of the image:
+            # image_height = self.images[i].shape[0]
+            # mask = np.array([q1[:, 1] > 2 * image_height / 3]).squeeze()
+            # q1 = q1[mask]
+            # q2 = q2[mask]
+            # good = [good[i] for i in range(len(mask)) if mask[i]]
 
-        # 4. Filter out the matches whose x distance is 3 times larger than the median x distance:
-        # median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
-        # mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
-        # q1 = q1[mask]
-        # q2 = q2[mask]
-        # good = [good[i] for i in range(len(mask)) if mask[i]]
+            # 4. Filter out the matches whose x distance is 3 times larger than the median x distance:
+            median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
+            mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
+            q1 = q1[mask]
+            q2 = q2[mask]
+            good = [good[i] for i in range(len(mask)) if mask[i]]
 
         if show:
             # Show the keypoints of the good matches:
