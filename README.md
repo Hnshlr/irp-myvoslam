@@ -14,7 +14,11 @@ It aims to provide an analysis of the extent to which Visual Odometry can achiev
 
 ### Python version
 
-The application was developped with Python 3.7.17. All requirements to meet for this project to run are explained in the next section. **It is mandatory that the virtual environment is created with Python 3.7.17, otherwise dependencies will not be installed correctly.**
+The application was initially developed with Python 3.7.17, however in the late stages of development, a proper virtual environment was created under Python 3.9.17. In both cases, make sure you use respectively the ```requirements37.txt``` or ```requirements39.txt``` file to install the dependencies, depending on the version of Python you wish to use.
+
+### Important notes
+
+If Python 3.9.17 is used, you won't be able tu use ```SURF``` as a feature detector, as it is not supported by OpenCV 4.5.4, the lowest version of OpenCV that supports Python 3.9.17.
 
 ### Initiate the virtual environment
 
@@ -26,7 +30,7 @@ To create a virtual environment, first open your command prompt or terminal and 
 
 Once in the main directory, create a new virtual environment using the venv module in Python. The command to create a virtual environment is:
 
-```python3.7 -m venv venv```
+```python3.9 -m venv venv``` (or ```python3.7 -m venv venv``` if you are using Python 3.7.17)
 
 This will create a new directory called "venv" in the backend directory, which will contain all the necessary files for their virtual environment. 
 
@@ -38,7 +42,7 @@ This will activate the virtual environment. You should see the name of the envir
 
 To install the dependencies, run the following command:
 
-```pip3 install -r requirements.txt --no-cache-dir --no-dependencies```
+```pip3 install -r requirements39.txt --no-cache-dir --no-dependencies``` (or ```pip3 install -r requirements37.txt --no-cache-dir --no-dependencies``` if you are using Python 3.7.17)
 
 This will install all the required packages for the project.
 
