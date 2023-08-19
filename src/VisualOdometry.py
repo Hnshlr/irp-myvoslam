@@ -1,7 +1,7 @@
 # IMPORTS=
 from scipy.optimize import least_squares
 from tkinter import *
-win= Tk()
+win = Tk()
 
 # MODELS=
 from src.Utils import *
