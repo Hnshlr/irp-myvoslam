@@ -6,11 +6,13 @@ from tkinter import *
 from src.Utils import *
 from src.SemanticSegmentation import *
 
+# THE TKINTER WINDOW (USED TO GATHER USER SCREEN WIDTH, FOR BETTER VISUALIZATION):
 win = Tk()
 
-
+# THE MAIN VISUAL ODOMETRY CLASS:
 class VisualOdometry:
-    def __init__(self, data_dir, method="mono", do_PMOR=False, ss_parameters=None, fto_parameters=None):
+    def __init__(self, data_dir, method="mono", fd_parameters=None, pmor_parameters=None, ss_parameters=None, fto_parameters=None):
+        # METHOD:
         self.method = method
         self.dataset_dir_path = data_dir
 
@@ -20,8 +22,15 @@ class VisualOdometry:
         self.images_l = load_images(data_dir + '/image_0')
         self.images_r = load_images(data_dir + '/image_1')
 
+        # FEATURE DETECTION:
+        self.feature_detection_parameters = fd_parameters \
+            if fd_parameters is not None \
+            else {"fda": "orb", "nfeatures": 3000}
+
         # PMOR:
-        self.do_PMOR = do_PMOR
+        self.pmor_parameters = pmor_parameters \
+            if pmor_parameters is not None \
+            else {"do_PMOR": False, "do_xyMeanDist": False, "do_xyImgDist": False, "do_RANSAC": False}
 
         # SEMANTIC SEGMENTATION:
         self.semantic_segmentation = None
@@ -43,8 +52,7 @@ class VisualOdometry:
         self.images_paths.sort()
 
         if method == "mono":
-            # ORB+FLANN:
-            self.orb = cv2.ORB_create(3000)
+            # FLANN MATCHER
             FLANN_INDEX_LSH = 6
             index_params = dict(algorithm=FLANN_INDEX_LSH, table_number=6, key_size=12, multi_probe_level=1)
             search_params = dict(checks=50)
@@ -84,23 +92,27 @@ class VisualOdometry:
     # MONO METHODS=
 
     def get_matches(self, i, show=False, prev_mask=None, curr_mask=None):
-        # VERSION 1: ORB
-        kp1, des1 = self.orb.detectAndCompute(self.images_l[i - 1], mask=prev_mask)
-        kp2, des2 = self.orb.detectAndCompute(self.images_l[i], mask=curr_mask)
+        orb = cv2.ORB_create(nfeatures=self.feature_detection_parameters["nfeatures"])
+        if self.feature_detection_parameters["fda"] == "orb":
+            # VERSION 1: ORB
+            kp1 = orb.detect(self.images_l[i - 1], mask=prev_mask)
+            kp2 = orb.detect(self.images_l[i], mask=curr_mask)
 
-        # VERSION 2: FAST (USING ORB TO COMPUTE DESCRIPTORS, AS FAST DOES NOT SUPPORT IT)
-        # fast = cv2.FastFeatureDetector_create()
-        # kp1 = fast.detect(self.images_l[i - 1], mask=prev_mask)
-        # kp2 = fast.detect(self.images_l[i], mask=curr_mask)
-        # kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
-        # kp2, des2 = self.orb.compute(self.images_l[i], kp2)
+        elif self.feature_detection_parameters["fda"] == "fast":
+            # VERSION 2: FAST (USING ORB TO COMPUTE DESCRIPTORS, AS FAST DOES NOT SUPPORT IT)
+            fast = cv2.FastFeatureDetector_create()
+            kp1 = fast.detect(self.images_l[i - 1], mask=prev_mask)
+            kp2 = fast.detect(self.images_l[i], mask=curr_mask)
 
-        # VERSION 3: SURF (USING ORB TO COMPUTE DESCRIPTORS, AS SURF DOES NOT SUPPORT IT)
-        # surf = cv2.xfeatures2d.SURF_create()
-        # kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
-        # kp2 = surf.detect(self.images_l[i], mask=curr_mask)
-        # kp1, des1 = self.orb.compute(self.images_l[i - 1], kp1)
-        # kp2, des2 = self.orb.compute(self.images_l[i], kp2)
+        elif self.feature_detection_parameters["fda"] == "surf":
+            # VERSION 3: SURF (USING ORB TO COMPUTE DESCRIPTORS, AS SURF DOES NOT SUPPORT IT)
+            surf = cv2.xfeatures2d.SURF_create()
+            kp1 = surf.detect(self.images_l[i - 1], mask=prev_mask)
+            kp2 = surf.detect(self.images_l[i], mask=curr_mask)
+
+        # COMPUTE DESCRIPTORS:
+        kp1, des1 = orb.compute(self.images_l[i - 1], kp1)
+        kp2, des2 = orb.compute(self.images_l[i], kp2)
 
         # FLANN:
         matches = self.flann.knnMatch(des1, des2, k=2)
@@ -119,48 +131,43 @@ class VisualOdometry:
         q1 = np.float32([kp1[m.queryIdx].pt for m in good])
         q2 = np.float32([kp2[m.trainIdx].pt for m in good])
 
-        if self.do_PMOR:
-            # 1. Filter out the matches whose distance is 3 times larger than the median distance:
-            # median_y_distance = np.median(np.abs(q1[:, 1] - q2[:, 1]))
-            # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 6 * median_y_distance]).squeeze()
-            # q1 = q1[mask]
-            # q2 = q2[mask]
-            # good = [good[i] for i in range(len(mask)) if mask[i]]
+        if self.pmor_parameters["do_PMOR"]:
+            if self.pmor_parameters["do_xyMeanDist"]:
+                # Filter out the matches whose x distance is 5 times larger than the mean x distance:
+                median_x_distance = np.mean(np.abs(q1[:, 0] - q2[:, 0]))
+                mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 5 * median_x_distance]).squeeze()
+                q1 = q1[mask]
+                q2 = q2[mask]
+                good = [good[i] for i in range(len(mask)) if mask[i]]
 
-            # 2. Filter out the matches whose distance is larger than 1/10th of the image height:
-            # image_height = self.images_l[i].shape[0]
-            # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
-            # q1 = q1[mask]
-            # q2 = q2[mask]
-            # good = [good[i] for i in range(len(mask)) if mask[i]]
+                # Filter out the matches whose y distance is 5 times larger than the mean y distance:
+                median_y_distance = np.mean(np.abs(q1[:, 1] - q2[:, 1]))
+                mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 5 * median_y_distance]).squeeze()
+                q1 = q1[mask]
+                q2 = q2[mask]
+                good = [good[i] for i in range(len(mask)) if mask[i]]
 
-            # 3. Filter out the matches to keep only the matches that are in the 1/3th bottom of the image:
-            # image_height = self.images[i].shape[0]
-            # mask = np.array([q1[:, 1] > 2 * image_height / 3]).squeeze()
-            # q1 = q1[mask]
-            # q2 = q2[mask]
-            # good = [good[i] for i in range(len(mask)) if mask[i]]
+            if self.pmor_parameters["do_xyImgDist"]:
+                # Filter out the matches whose x distance is above 1/5th of the image width:
+                mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < self.images_l[i].shape[1] / 5]).squeeze()
+                q1 = q1[mask]
+                q2 = q2[mask]
+                good = [good[i] for i in range(len(mask)) if mask[i]]
 
-            # 4. Filter out the matches whose x distance is 3 times larger than the median x distance:
-            # median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
-            # mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
-            # q1 = q1[mask]
-            # q2 = q2[mask]
-            # good = [good[i] for i in range(len(mask)) if mask[i]]
+                # Filter out the matches whose y distance is above 1/5th of the image height:
+                mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < self.images_l[i].shape[0] / 5]).squeeze()
+                q1 = q1[mask]
+                q2 = q2[mask]
+                good = [good[i] for i in range(len(mask)) if mask[i]]
 
-            # 5. Filter out the matches whose y distance is 3 times larger than the mean y distance:
-            median_y_distance = np.mean(np.abs(q1[:, 1] - q2[:, 1]))
-            mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 3 * median_y_distance]).squeeze()
-            q1 = q1[mask]
-            q2 = q2[mask]
-            good = [good[i] for i in range(len(mask)) if mask[i]]
-
-            # 6. Filter out the matches whose x distance is 3 times larger than the mean x distance:
-            median_x_distance = np.mean(np.abs(q1[:, 0] - q2[:, 0]))
-            mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
-            q1 = q1[mask]
-            q2 = q2[mask]
-            good = [good[i] for i in range(len(mask)) if mask[i]]
+            # RANSAC:
+            if self.pmor_parameters["do_RANSAC"]:
+                # Get the transformation matrix:
+                transf, mask = cv2.findHomography(q1, q2, cv2.RANSAC, 5.0)
+                mask = np.array([True if mask[i][0] == 1 else False for i in range(len(mask))])
+                q1 = q1[mask]
+                q2 = q2[mask]
+                good = [good[i] for i in range(len(mask)) if mask[i]]
 
         if show:
             # Show the keypoints of the good matches:
