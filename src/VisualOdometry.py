@@ -1,14 +1,16 @@
 # IMPORTS=
 from scipy.optimize import least_squares
 from tkinter import *
-win = Tk()
 
 # MODELS=
 from src.Utils import *
 from src.SemanticSegmentation import *
 
-class VisualOdometry():
-    def __init__(self, data_dir, method="mono", semantic_segmentation_parameters=None, fto_parameters=None, doPMOR=False):
+win = Tk()
+
+
+class VisualOdometry:
+    def __init__(self, data_dir, method="mono", do_PMOR=False, ss_parameters=None, fto_parameters=None):
         self.method = method
         self.dataset_dir_path = data_dir
 
@@ -19,13 +21,13 @@ class VisualOdometry():
         self.images_r = load_images(data_dir + '/image_1')
 
         # PMOR:
-        self.doPMOR = doPMOR
+        self.do_PMOR = do_PMOR
 
         # SEMANTIC SEGMENTATION:
         self.semantic_segmentation = None
-        if semantic_segmentation_parameters is not None:
-            if semantic_segmentation_parameters["segmentate"]:
-                self.semantic_segmentation = SemanticSegmentation(semantic_segmentation_parameters["model_path"], semantic_segmentation_parameters["features_to_ignore"])
+        if ss_parameters is not None:
+            if ss_parameters["do_SS"]:
+                self.semantic_segmentation = SemanticSegmentation(ss_parameters["model_path"], ss_parameters["features_to_ignore"])
 
         # FRAME TILE OPTIMIZATION (FTO):
         if fto_parameters is not None:
@@ -117,7 +119,7 @@ class VisualOdometry():
         q1 = np.float32([kp1[m.queryIdx].pt for m in good])
         q2 = np.float32([kp2[m.trainIdx].pt for m in good])
 
-        if self.doPMOR:
+        if self.do_PMOR:
             # 1. Filter out the matches whose distance is 3 times larger than the median distance:
             # median_y_distance = np.median(np.abs(q1[:, 1] - q2[:, 1]))
             # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 6 * median_y_distance]).squeeze()

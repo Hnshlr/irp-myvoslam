@@ -29,7 +29,7 @@ def main():
                     vo = VisualOdometry(
                         dataset_path,
                         method=method,
-                        doPMOR=pmor
+                        do_PMOR=pmor
                         )
                     gt_path, est_path = vo.estimate_path(monitor=monitor, view=view)     # Estimate the path
                     # MEASUREMENTS:
