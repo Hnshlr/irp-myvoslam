@@ -170,7 +170,7 @@ class VisualOdometry:
             # cv2.imshow("image23", img23)
 
             # Show the good matches:
-            draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
+            draw_params = dict(singlePointColor=None, matchesMask=None, flags=2)
             img3 = cv2.drawMatches(self.images_l[i], kp1, self.images_l[i-1], kp2, good, None, **draw_params)
             # cv2.imshow("image3", img3)
 
@@ -540,7 +540,7 @@ class VisualOdometry:
 
             if show:
                 # Show the matches and the disparity map:
-                draw_params = dict(matchColor=-1, singlePointColor=None, matchesMask=None, flags=2)
+                draw_params = dict(singlePointColor=None, matchesMask=None, flags=2)
                 tp1_l = [cv2.KeyPoint(x, y, 1) for x, y in tp1_l]
                 tp2_l = [cv2.KeyPoint(x, y, 1) for x, y in tp2_l]
                 tp1_r = [cv2.KeyPoint(x, y, 1) for x, y in tp1_r]
