@@ -5,4 +5,4 @@ curl -L "https://www.dropbox.com/scl/fi/7foz4er9snxed7equq1yo/skitti.zip?rlkey=z
 
 unzip src/data/input/kitti/skitti.zip -d src/data/input/kitti
 
-rm src/data/input/kitti/kitti.zip
+rm src/data/input/kitti/skitti.zip
