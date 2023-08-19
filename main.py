@@ -26,6 +26,8 @@ PATCH_MAX_FEATURES = 10
 view = True
 monitor = True
 saveData = False
+# ⌞ POST MATCHING OUTLIER REMOVAL (PMOR)=
+doPMOR = True
 
 # MAIN:
 def main():
@@ -47,7 +49,8 @@ def main():
                     "grid_h": GRID_H,
                     "grid_w": GRID_W,
                     "patch_max_features": PATCH_MAX_FEATURES
-                }
+                },
+                doPMOR=doPMOR
                 )
             gt_path, est_path = vo.estimate_path(monitor=monitor, view=view)     # Estimate the path
             # MEASUREMENTS:

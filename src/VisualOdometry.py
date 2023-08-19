@@ -126,11 +126,11 @@ class VisualOdometry():
             # good = [good[i] for i in range(len(mask)) if mask[i]]
 
             # 2. Filter out the matches whose distance is larger than 1/10th of the image height:
-            image_height = self.images_l[i].shape[0]
-            mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
-            q1 = q1[mask]
-            q2 = q2[mask]
-            good = [good[i] for i in range(len(mask)) if mask[i]]
+            # image_height = self.images_l[i].shape[0]
+            # mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < image_height / 7]).squeeze()
+            # q1 = q1[mask]
+            # q2 = q2[mask]
+            # good = [good[i] for i in range(len(mask)) if mask[i]]
 
             # 3. Filter out the matches to keep only the matches that are in the 1/3th bottom of the image:
             # image_height = self.images[i].shape[0]
@@ -140,7 +140,21 @@ class VisualOdometry():
             # good = [good[i] for i in range(len(mask)) if mask[i]]
 
             # 4. Filter out the matches whose x distance is 3 times larger than the median x distance:
-            median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
+            # median_x_distance = np.median(np.abs(q1[:, 0] - q2[:, 0]))
+            # mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
+            # q1 = q1[mask]
+            # q2 = q2[mask]
+            # good = [good[i] for i in range(len(mask)) if mask[i]]
+
+            # 5. Filter out the matches whose y distance is 3 times larger than the mean y distance:
+            median_y_distance = np.mean(np.abs(q1[:, 1] - q2[:, 1]))
+            mask = np.array([np.abs(q1[:, 1] - q2[:, 1]) < 3 * median_y_distance]).squeeze()
+            q1 = q1[mask]
+            q2 = q2[mask]
+            good = [good[i] for i in range(len(mask)) if mask[i]]
+
+            # 6. Filter out the matches whose x distance is 3 times larger than the mean x distance:
+            median_x_distance = np.mean(np.abs(q1[:, 0] - q2[:, 0]))
             mask = np.array([np.abs(q1[:, 0] - q2[:, 0]) < 3 * median_x_distance]).squeeze()
             q1 = q1[mask]
             q2 = q2[mask]
