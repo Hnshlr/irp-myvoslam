@@ -42,18 +42,8 @@ class SemanticSegmentation:
             os.remove(temp_path)
             # Save the masks to a file:
             np.save(masks_path, masks)
-        masks = [mask for mask in masks if mask['class_name'] not in self.features_to_ignore]
-        masks = [mask['masks'] for mask in masks]
-        dimx, dimy = masks[0].shape
-        mask = np.zeros((dimx, dimy), dtype=bool)
-        # Merge the masks:
-        for i in range(dimx):
-            for j in range(dimy):
-                mask[i, j] = any([mask[i, j] for mask in masks])    # Returns True if at least one mask is True
-        # Upscale the mask:
-        upscaled_mask = np.zeros((370, 1226), dtype=np.uint8)
-        ratio = 370 / 154
-        for i in range(upscaled_mask.shape[0]):
-            for j in range(upscaled_mask.shape[1]):
-                upscaled_mask[i, j] = 255 if mask[int(i / ratio), int(j / ratio)] else 0
+        masks = [mask['masks'] for mask in masks if mask['class_name'] not in self.features_to_ignore]
+        mask = np.any(masks, axis=0).astype(np.uint8)
+        image = cv2.imread(image_path)
+        upscaled_mask = cv2.resize(mask, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_NEAREST) * 255
         return upscaled_mask
