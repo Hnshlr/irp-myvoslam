@@ -9,8 +9,8 @@ rm src/data/input/kitti/skitti.zip
 
 mkdir -p src/models
 
-curl -L "https://www.dropbox.com/scl/fi/geevv3l7vv175zor79vjn/models.zip?rlkey=a9k4mfn1dl9lv371lhdvjmnn7&dl=1" -o src/models.zip
+curl -L "https://www.dropbox.com/scl/fi/geevv3l7vv175zor79vjn/models.zip?rlkey=a9k4mfn1dl9lv371lhdvjmnn7&dl=1" -o src/models/models.zip
 
-unzip src/models.zip -d src/models
+unzip src/models/models.zip -d src/models
 
-rm src/models.zip
+rm src/models/models.zip
