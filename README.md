@@ -50,13 +50,13 @@ This will install all the required packages for the project.
 
 To download the data, run the following command:
 
-```./scripts/curl-kitti.sh```
+```./scripts/curl-data-and-models.sh```
 
 or 
 
-```./scripts/wget-kitti.sh```
+```./scripts/wget-data-and-models.sh```
 
-This will download the data from the KITTI dataset, create the ```src/data/input/kitti``` and ```src/data/output/kitti``` directories, and unzip the data in the input directory. You must have either ```curl``` or ```wget``` installed on your machine for this to work.
+This will download the data from the KITTI dataset, create the ```src/data/input/kitti``` and ```src/data/output/kitti``` directories, and unzip the data in the input directory. It will also download the pre-trained models for the feature detectors and descriptors, and unzip them in the ```src/data/models``` directory. You must have either ```curl``` or ```wget``` installed on your machine for this to work.
 
 
 ### Run the application
