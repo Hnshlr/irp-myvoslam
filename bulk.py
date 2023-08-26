@@ -29,7 +29,7 @@ GRID_H_values = [4, 8, 10]
 GRID_W_values = [4, 8, 10, 20, 30]
 PATCH_MAX_FEATURES = 10  # So that the number of features never exceeds 3000
 # _ VIEW/MONITOR/SAVE PARAMETERS:
-view = True                         # Visualize the results
+view = False                         # Visualize the results
 monitor = True                      # Show the progress bar (tqdm)
 save = True                         # Save the data to a .csv file
 
