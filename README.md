@@ -119,7 +119,7 @@ ss_parameters = {
 
 - `do_SS`: Toggle to enable or disable semantic segmentation.
 - `model_path`: Path to the pre-trained model used for semantic segmentation.
-- `features_to_ignore`: A list of features or objects that you want the algorithm to ignore during segmentation.
+- `features_to_ignore`: A list of features or objects that you want excluded from the final mask applied to the image.
 
 #### Frame Tile Optimization (FTO) Parameters
 
