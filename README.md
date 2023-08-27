@@ -103,7 +103,7 @@ To test on specific datasets, simply modify this list to include only the desire
 
 #### Method:
 
-The `methods` parameter determines the type of visual odometry to be used (either "mono" or "stereo")
+The `method` parameter determines the type of visual odometry to be used (either "mono" or "stereo")
 
 ```python
 method = ["mono", "stereo"][0]
@@ -203,8 +203,6 @@ The application allows the user to run a bulk test of FTO grid combinations. Thi
 3. **datasets_paths**: This list contains paths to the datasets you want to test on.
 
 4. **fd_parameters**: This dictionary contains parameters related to feature detection. You can set the feature detection method and the number of features to detect.
-
-5. **save, view, monitor**: These are boolean flags to control whether you want to save the results, visualize them, or show a progress bar, respectively.
 
 #### Running with Custom Parameters:
 
