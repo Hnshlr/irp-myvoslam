@@ -3,8 +3,14 @@ import os
 import cv2
 from pixellib.semantic import semantic_segmentation     # second model
 
+
 class SemanticSegmentation:
     def __init__(self, model_path, features_to_ignore):
+        """
+        Initializes the Semantic Segmentation class.
+        :param model_path: Path to the model to use for semantic segmentation.
+        :param features_to_ignore: List of features to ignore (ie. ["person", "car", "road"]) from the final mask.
+        """
         self.seg = semantic_segmentation()
         self.seg.load_ade20k_model(model_path)
         self.features_to_ignore = features_to_ignore
@@ -13,7 +19,7 @@ class SemanticSegmentation:
         """
         Returns the upscaled mask of the image, containing all the features in the list.
         :param image_path: Path to the image to segment.
-        :param features: List of features to segment (ie. ["person", "car", "road"]).
+        :param features: List of features to ignore (ie. ["person", "car", "road"]) from the final mask.
         :return: The upscaled mask (meaning that it has the same dimensions as the original image) of the image,
         corresponding to the region for the feature detection algorithm to look for the features in.
         """

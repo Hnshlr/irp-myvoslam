@@ -6,7 +6,16 @@ import pandas as pd
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+
 def get_xy_values(gt_path, est_path):
+    """
+    Returns the difference between the final x and y values of the ground truth and estimated paths, the mean difference
+    between the x and y values of the ground truth and estimated paths, and the maximum difference between the x and y
+    values of the ground truth and estimated paths.
+    :param gt_path: The ground truth path.
+    :param est_path: The estimated path.
+    :return: The difference between the final x and y values of the ground truth and estimated paths, the mean difference
+    """
     x_final_diff = np.abs(np.round(gt_path[-1][0] - est_path[-1][0], 2))
     y_final_diff = np.abs(np.round(gt_path[-1][1] - est_path[-1][1], 2))
     x_mean_diff = np.abs(np.round(np.mean([gt_path[i][0] - est_path[i][0] for i in range(len(gt_path))]), 2))
@@ -15,7 +24,14 @@ def get_xy_values(gt_path, est_path):
     y_max_diff = np.round(np.max([np.abs(gt_path[i][1] - est_path[i][1]) for i in range(len(gt_path))]), 2)
     return x_final_diff, y_final_diff, x_mean_diff, y_mean_diff, x_max_diff, y_max_diff
 
+
 def get_ate(gt_path, est_path):
+    """
+    Returns the Absolute Trajectory Error (ATE) and the Non-cumulative Absolute Trajectory Error (NC-ATE) between the
+    ground truth and estimated paths, both in meters and in percentage of the mean distance of the ground truth path.
+    :param gt_path: The ground truth path.
+    :param est_path: The estimated path.
+    """
     gt_path = np.array(gt_path)
     est_path = np.array(est_path)
     errors = np.linalg.norm(gt_path - est_path, axis=1)
@@ -31,6 +47,12 @@ def get_ate(gt_path, est_path):
 
 # PLOT THE MONO, STEREO AND GT PATHS:
 def plot_poses(dataset_path, gt_path, est_paths):
+    """
+    Plot the ground truth, mono and stereo paths.
+    :param dataset_path:
+    :param gt_path:
+    :param est_paths:
+    """
     plt.plot([gt_path[i][0] for i in range(len(gt_path))], [gt_path[i][1] for i in range(len(gt_path))], label="Ground Truth", color="blue")
     plt.plot([est_paths[0][i][0] for i in range(len(est_paths[0]))], [est_paths[0][i][1] for i in range(len(est_paths[0]))], label="Mono", color="orange")
     plt.plot([est_paths[1][i][0] for i in range(len(est_paths[1]))], [est_paths[1][i][1] for i in range(len(est_paths[1]))], label="Stereo", color="green")
@@ -54,6 +76,7 @@ def plot_poses(dataset_path, gt_path, est_paths):
     plt.close()
     plt.show()
 
+
 # PLOT THE ERROR EVOLUTION OF THE MONO AND STEREO PATHS COMPARED TO THE GT PATH (DISTANCE=SQRT(X^2+Y^2)):
 def plot_errors(dataset_path, gt_path, est_paths):
     plt.plot(
@@ -70,6 +93,7 @@ def plot_errors(dataset_path, gt_path, est_paths):
                 + time.strftime("%Y-%m-%d_%H-%M") + ".png")
     plt.close()
     plt.show()
+
 
 # PLOT THE ERROR EVOLUTION OF THE MONO AND STEREO PATHS COMPARED TO THE GT PATH (DISTANCE=SQRT(X^2+Y^2)) BUT FOR EACH STEP (NOT CUMULATIVE):`
 def plot_ncerrors(dataset_path, gt_path, est_paths):
@@ -91,6 +115,7 @@ def plot_ncerrors(dataset_path, gt_path, est_paths):
                 + time.strftime("%Y-%m-%d_%H-%M") + ".png")
     plt.close()
     plt.show()
+
 
 def svo_fto_improvements(filepath=None, dataframe=None):
     # Read the CSV file:
@@ -226,6 +251,7 @@ def svo_fto_improvements(filepath=None, dataframe=None):
                                       'SVOFTO_NC_ATE': fto_nc_ate, 'NC_ATE_improvement': nc_ate_improvement}, ignore_index=True)
 
     return df_ate, df_nc_ate
+
 
 def svo_fto_improvements_v2(filepath=None, dataframe=None):
     # Read the CSV file:
