@@ -14,11 +14,11 @@ It aims to provide an analysis of the extent to which Visual Odometry can achiev
 
 ### Python version
 
-The application was initially developed with Python 3.7.17, however in the late stages of development, a proper virtual environment was created under Python 3.9.17. In both cases, make sure you use respectively the ```requirements37.txt``` or ```requirements39.txt``` file to install the dependencies, depending on the version of Python you wish to use.
+The application was initially developed with Python 3.7 (3.7.17 to be exact), however in the late stages of development, a proper virtual environment was created under Python 3.9. In both cases, make sure you use respectively the ```requirements37.txt``` or ```requirements39.txt``` file to install the dependencies, depending on the version of Python you wish to use.
 
 ### Important notes
 
-If Python 3.9.17 is used, you won't be able tu use ```SURF``` as a feature detector, as it is not supported by OpenCV 4.5.4, the lowest version of OpenCV that supports Python 3.9.17.
+If Python 3.9 is used, you won't be able tu use ```SURF``` as a feature detector, as it is not supported by OpenCV 4.5.4, the lowest version of OpenCV that supports Python 3.9, as it was patented by its creators. If you wish to use ```SURF``` as a feature detector, please use Python 3.7.17.
 
 ### Initiate the virtual environment
 
