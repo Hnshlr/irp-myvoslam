@@ -44,7 +44,7 @@ To install the dependencies, run the following command:
 
 ```pip3 install -r requirements39.txt --no-cache-dir --no-dependencies``` (or ```pip3 install -r requirements37.txt --no-cache-dir --no-dependencies``` if you are using Python 3.7.17)
 
-This will install all the required packages for the project.
+This will install all the required packages for the project. **Important note**: It is mandatory to add the ```--no-cache-dir``` and ```--no-dependencies``` flags to the command, otherwise the installation will fail. For further explanation, please refer to the end of the README.md file.
 
 ### Download the data
 
