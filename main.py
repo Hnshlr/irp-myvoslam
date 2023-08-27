@@ -48,7 +48,7 @@ fto_parameters = \
 # _ VIEW/MONITOR/SAVE PARAMETERS:
 view = True                         # Visualize the results
 monitor = True                      # Show the progress bar (tqdm)
-save = True                         # Save the data to a .csv file
+save = False                         # Save the data to a .csv file
 
 
 # MAIN:
