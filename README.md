@@ -30,7 +30,7 @@ To create a virtual environment, first open your command prompt or terminal and 
 
 Once in the main directory, create a new virtual environment using the venv module in Python. The command to create a virtual environment is:
 
-```python3.9 -m venv venv``` (or ```python3.7 -m venv venv``` if you are using Python 3.7.17)
+```python3 -m venv venv```
 
 This will create a new directory called "venv" in the backend directory, which will contain all the necessary files for their virtual environment. 
 
