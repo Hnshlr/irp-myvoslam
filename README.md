@@ -75,7 +75,7 @@ If you have any questions, please contact me at ```hans.haller.885@cranfield.ac.
 
 The application is designed to be modular, and to allow the user to run specific tasks. The following sections will describe how to run specific tasks.
 
-### Compute the pose estimation
+### 1. Compute the pose estimation
 
 To compute a pose estimation, simply run the following command:
 
@@ -85,7 +85,47 @@ This will run the application with the default parameters, and will compute the 
 
 There are various parameters that the user may tweak, and they are free to do so. The following sections will describe what can be done:
 
-### Tweaking Parameters
+### 2. Tweaking Parameters
+
+#### Dataset Paths:
+
+The `datasets_paths` list contains paths to the datasets you want to test on. By default, it includes paths to all the datasets labeled from "S0" to "S10" in the `input_dir`.
+
+```python
+datasets_paths = [
+    os.path.join(input_dir, dataset_index)
+    for dataset_index in
+    ["S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"]
+]
+```
+
+To test on specific datasets, simply modify this list to include only the desired dataset labels.
+
+#### Method:
+
+The `methods` parameter determines the type of visual odometry to be used (either "mono" or "stereo")
+
+```python
+method = ["mono", "stereo"][0]
+```
+
+The user may choose to run the application with either the monocular or stereo visual odometry method.
+
+#### Feature Detection Parameters:
+
+The `fd_parameters` dictionary contains parameters related to feature detection. You can set the feature detection method and the number of features to detect.
+
+```python
+fd_parameters = {
+    "fda": ["surf", "fast", "orb"][2],   # The feature detection method
+    "nfeatures": 3000                    # The number of features to detect
+}
+```
+
+- `fda`: This parameter determines the feature detection algorithm to be used. In the given example, "orb" is selected.
+- `nfeatures`: This parameter specifies the number of features to detect in the image.
+
+By tweaking these parameters, users can experiment with different feature detection algorithms and the number of features to understand their impact on the visual odometry results.
 
 #### Post Matching Outlier Removal (PMOR) Parameters
 
@@ -138,15 +178,17 @@ fto_parameters = {
 - `grid_h` and `grid_w`: Define the grid size for the image frame. This determines how many tiles the image is divided into, horizontally and vertically.
 - `patch_max_features`: The maximum number of features you want to retain in each tile. This ensures a uniform distribution of features across the frame.
 
-### Running with Custom Parameters
+#### Visualisation, Monitoring, and Saving
 
-After adjusting the parameters as desired, simply run the application again with:
+1. **Visualization (`view` parameter, set to `True` by default)**: Enables real-time visualization of the visual odometry process, showcasing keypoints detection, frame matching, and motion estimation.
+   
+2. **Monitoring (`monitor` parameter, set to `True` by default)**: Uses the `tqdm` library to display a progress bar, offering a real-time status of the computation's progress.
 
-```python3 main.py```
+3. **Saving (`save` parameter, set to `False` by default)**: Allows the results, specifically the Absolute Trajectory Error (ATE), to be saved into a `.csv` file for further analysis.
 
-This will execute the application with the newly set parameters.
+Feel free to adjust these parameters as you see fit.
 
-### Bulk-Testing of FTO grid combinations
+### 3. Bulk-Testing of FTO grid combinations
 
 The application allows the user to run a bulk test of FTO grid combinations. This is useful to determine the optimal grid size for the image frame. To run a bulk test, simply run the following command:
 
