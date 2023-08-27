@@ -77,20 +77,116 @@ The application is designed to be modular, and to allow the user to run specific
 
 ### Compute the pose estimation
 
-...
+To compute a pose estimation, simply run the following command:
 
-### Visualize the features, matches and more
+```python3 main.py```
 
-...
+This will run the application with the default parameters, and will compute the pose estimation for the the sequences 4 and 5 of the KITTI dataset. The results will be saved in the ```src/data/output/kitti``` directory. Results are not saved by default.
+
+There are various parameters that the user may tweak, and they are free to do so. The following sections will describe what can be done:
+
+### Tweaking Parameters
+
+#### Post Matching Outlier Removal (PMOR) Parameters
+
+Post Matching Outlier Removal is crucial for refining the matches obtained after feature detection and description. Adjusting the parameters in the `pmor_parameters` dictionary allows you to control the outlier removal process:
+
+```python
+pmor_parameters = {
+    "do_PMOR": True,
+    "do_xyMeanDist": True,
+    "do_xyImgDist": True,
+    "do_RANSAC": True,
+}
+```
+
+- `do_PMOR`: This is the main switch. Set to `True` to enable PMOR, and `False` to disable it.
+- `do_xyMeanDist`: Toggle this to enable or disable the mean distance method for outlier removal.
+- `do_xyImgDist`: Toggle this to enable or disable the image dimension method for outlier removal.
+- `do_RANSAC`: Toggle this to enable or disable the RANSAC method for outlier removal.
+
+#### Semantic Segmentation (SS) Parameters
+
+Semantic Segmentation aids in understanding the scene by classifying each pixel into predefined categories. Adjust the parameters related to semantic segmentation in the `ss_parameters` dictionary:
+
+```python
+ss_parameters = {
+    "do_SS": True,
+    "model_path": "src/models/deeplabv3_xception65_ade20k.h5",
+    "features_to_ignore": ["sky", "person", "car"]
+}
+```
+
+- `do_SS`: Toggle to enable or disable semantic segmentation.
+- `model_path`: Path to the pre-trained model used for semantic segmentation.
+- `features_to_ignore`: A list of features or objects that you want the algorithm to ignore during segmentation.
+
+#### Frame Tile Optimization (FTO) Parameters
+
+Frame Tile Optimization is used to distribute features uniformly across the image frame. Adjust the parameters in the `fto_parameters` dictionary:
+
+```python
+fto_parameters = {
+    "do_FTO": True,
+    "grid_h": 40,
+    "grid_w": 20,
+    "patch_max_features": 10
+}
+```
+
+- `do_FTO`: This is the main switch. Set to `True` to enable FTO, and `False` to disable it.
+- `grid_h` and `grid_w`: Define the grid size for the image frame. This determines how many tiles the image is divided into, horizontally and vertically.
+- `patch_max_features`: The maximum number of features you want to retain in each tile. This ensures a uniform distribution of features across the frame.
+
+### Running with Custom Parameters
+
+After adjusting the parameters as desired, simply run the application again with:
+
+```python3 main.py```
+
+This will execute the application with the newly set parameters.
 
 ### Bulk-Testing of FTO grid combinations
 
-...
+The application allows the user to run a bulk test of FTO grid combinations. This is useful to determine the optimal grid size for the image frame. To run a bulk test, simply run the following command:
+
+```python3 bulk.py```
+
+#### Parameters Overview:
+
+1. **GRID_H_values & GRID_W_values**: These lists define the various grid sizes you want to test. For instance, `GRID_H_values = [4, 8, 10]` means you'll test with 4, 8, and 10 tiles in the horizontal direction.
+
+2. **PATCH_MAX_FEATURES**: This parameter ensures the number of features never exceeds a certain threshold. It's set to 10 by default, meaning each tile will have a maximum of 10 features.
+
+3. **datasets_paths**: This list contains paths to the datasets you want to test on.
+
+4. **fd_parameters**: This dictionary contains parameters related to feature detection. You can set the feature detection method and the number of features to detect.
+
+5. **save, view, monitor**: These are boolean flags to control whether you want to save the results, visualize them, or show a progress bar, respectively.
+
+#### Running with Custom Parameters:
+
+If you wish to test with different parameters, modify the appropriate variables in the `bulk.py` script. For instance, to test with different grid sizes, simply modify the `GRID_H_values` and `GRID_W_values` lists.
+
+After adjusting the parameters as desired, run the script again:
+
+```bash
+python3 bulk.py
+```
+
+#### Results:
+
+The results will be saved in the `src/data/output/kitti` directory. Three files will be generated:
+
+1. **BULKFTO_[timestamp].csv**: Contains the raw results for each dataset and grid combination.
+2. **BULKFTO_ATE_COMPARISON_[timestamp].csv**: Contains the Absolute Trajectory Error (ATE) comparison.
+3. **BULKFTO_NCATE_COMPARISON_[timestamp].csv**: Contains the Normalized Cumulative ATE comparison.
 
 
-## Contact:
+‎ 
 
-GitHub: https://www.github.com/Hnshlr
+## Contact
 
-LinkedIn: https://www.linkedin.com/in/hans-haller/
+For further assistance or inquiries, don't hesitate to reach out to me at `hans.haller.885@cranfield.ac.uk`, or create a new issue on the repository.
 
+Happy experimenting!
