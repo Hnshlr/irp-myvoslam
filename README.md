@@ -46,9 +46,9 @@ To install the dependencies, run the following command:
 
 This will install all the required packages for the project. **Important note**: It is mandatory to add the ```--no-cache-dir``` and ```--no-dependencies``` flags to the command, otherwise the installation will fail. For further explanation, please refer to the end of the README.md file.
 
-### Download the data
+### Download the data and models
 
-To download the data, run the following command:
+To download the data and the models (**mandatory in order to apply semantic segmentation**), run the following command:
 
 ```./scripts/curl-data-and-models.sh```
 
