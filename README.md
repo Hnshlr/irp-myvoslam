@@ -1,6 +1,6 @@
 # AY22 Individual Research Project (A) 2022-2023
 
-Research Project on Autonomous Vehicle Self Awareness using SLAM algorithms.
+Master's Thesis (Research Project) on Autonomous Vehicle Self Awareness using SLAM algorithms.
 
 This project is research as part of the Master Thesis for the MSc in Computational and Software Techniques at Cranfield University.
 
@@ -8,6 +8,22 @@ It aims to provide an analysis of the extent to which Visual Odometry can achiev
 
 © Copyright 2023, All rights reserved to Hans Haller, CSTE-CIDA Student at Cranfield Uni. SATM, Cranfield, UK.
 
+![alt text](https://user-images.githubusercontent.com/74055973/280338020-90b9c56e-33b6-4406-8d08-3b3b73af16a4.png)
+‎ 
+
+## Context
+
+In recent years, SLAM (Simultaneous Localisation and Mapping) algorithms have revolutionized the realm of autonomous navigation, extending their influence from simple household robotic vacuum cleaners to urban self-driving cars and all the way to interplanetary exploration rovers. At the heart of SLAM lie the intertwined tasks of localisation and mapping. 
+
+This research delves specifically into the localisation aspect via Visual Odometry, unveiling a sophisticated Monocular approach, enhanced by state-of-the-art computational techniques. A notable enhancement is the seamless integration and comparison of advanced feature detection, ensuring more accurate and robust scene interpretation. Further refinement comes from the implementation of post-matching outlier filtering techniques, which drastically reduces inaccuracies arising from false matches. 
+
+Additionally, by harnessing the power of semantic segmentation, the system aims to efficiently categorize and differentiate distinct entities and features within the captured environment, enabling intricate scene masking for superior discernment. Depth perception, crucial for richer motion comprehension, is inferred by the computation of disparity maps through the use of stereo cameras. 
+
+Finally, the study introduces a frame-tiling optimisation method that seeks to elevate feature detection by distributing the process more uniformly across frames. This approach not only enhances motion estimation by ensuring an even distribution of features but also emphasizes the significance of dynamically adapting the technique. Furthermore, a comprehensive test is conducted to determine the optimal tile dimension combinations for each sequence, underscoring the adaptability imperative of the optimisation technique. 
+
+Utilising the KITTI dataset, which encompasses 11 labeled video sequences, precision, accuracy and consistency is assessed using the Absolute Trajectory Error (ATE) metric. Through rigorous experimentation and analytical methods, the study seeks to push the bound- aries of camera-based localisation and shape the future trajectory of SLAM algorithms, laying the foundation for the next generation of autonomous navigation systems.
+
+![alt text](https://user-images.githubusercontent.com/74055973/280340244-a42728b3-4b4d-47f4-acdd-49d4b18a6d5a.png)
 ‎ 
 
 ## Setting up the application
