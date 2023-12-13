@@ -2,7 +2,7 @@
 
 Master's Thesis (Research Project) on Autonomous Vehicle Self Awareness using SLAM algorithms.
 
-This project is research as part of the Master Thesis for the MSc in Computational and Software Techniques at Cranfield University.
+This research project is as part of the Master Thesis for the completion of my MSc in Computational and Software Techniques at Cranfield University.
 
 It aims to provide an analysis of the extent to which Visual Odometry can achieve accurate position and orientation estimation of a vehicle in complex environments.
 
